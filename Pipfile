@@ -7,6 +7,8 @@ name = "pypi"
 sqlmodel = "*"
 alembic = "*"
 asyncpg = "*"
+pyyaml = "*"
+pydantic = "*"
 
 [dev-packages]
 

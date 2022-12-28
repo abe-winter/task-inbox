@@ -1,0 +1,9 @@
+# sample task schema
+name: 't-i:sample'
+semver: '0'
+tasktypes:
+- name: delete-acct
+  resolved_states: ['deleted']
+- name: flag-content
+  pending_states: ['level1', 'level2']
+  resolved_states: ['block', 'allow']

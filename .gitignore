@@ -1,2 +1,12 @@
 .direnv/
 __pycache__/
+
+# fab gitignore
+*.pyc
+app.db
+./tmp
+./build/*
+.idea
+env
+venv
+*.sublime*

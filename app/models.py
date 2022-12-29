@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import List, Optional
 import sqlalchemy
 from flask_appbuilder import Model
-from sqlalchemy import Column, Integer, String, ForeignKey, func, DateTime, ForeignKey, Boolean
+from flask_appbuilder.security.sqla.models import User
+from sqlalchemy import Column, Integer, String, ForeignKey, func, DateTime, ForeignKey, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID, BYTEA
 
@@ -32,9 +33,9 @@ class WebhookKey(Base):
     key: str = Column(String)
     active: bool = Column(Boolean, default=True)
 
-    # __table_args__ = (
-    #     UniqueConstraint('tschema_id', 'key'),
-    # )
+    __table_args__ = (
+        UniqueConstraint('tschema_id', 'key'),
+    )
 
 class SchemaVersion(Base):
     "container for a specific version of an external app's task list"
@@ -45,10 +46,10 @@ class SchemaVersion(Base):
     default_hook_url: Optional[str] = Column(String, nullable=True)
     hook_auth: Optional[str] = Column(String, nullable=True) # colon-sep string of [(header, query), item_name]. ex: header:apikey, query:key
 
-    # __table_args__ = (
-    #     UniqueConstraint('tschema_id', 'version'),
-    #     UniqueConstraint('tschema_id', 'semver'),
-    # )
+    __table_args__ = (
+        UniqueConstraint('tschema_id', 'version'),
+        UniqueConstraint('tschema_id', 'semver'),
+    )
 
 class TaskType(Base):
     "within a SchemaVersion, a named task"
@@ -61,16 +62,16 @@ class TaskType(Base):
     # todo: hook_url + hook_auth that overrides the one for the schema
     # todo: permission spec. role to view, role to edit, role to access specific states
 
-    # __table_args__ = (
-    #     UniqueConstraint('version_id', 'name'),
-    # )
+    __table_args__ = (
+        UniqueConstraint('version_id', 'name'),
+    )
 
 class Task(Base):
     "an instance of a TaskType"
     ttype_id: uuid.UUID = Column(UUID, ForeignKey('task_type.id'))
     ttype = relationship('TaskType')
     state: Optional[str] = Column(String, nullable=True)
-    # user_id: Optional[uuid.UUID] = Column(UUID, default=None, ForeignKey('user.id')) # assigned user
+    user_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id'), nullable=True) # assigned user
     resolved: bool = Column(Boolean, default=False)
 
 class TaskHistory(Base):
@@ -79,6 +80,6 @@ class TaskHistory(Base):
     task = relationship('Task')
     state: Optional[str] = Column(String, nullable=True)
     resolved: bool = Column(Boolean, default=False)
-    # editor_id: Optional[uuid.UUID] = Column(default=None, ForeignKey('user.id')) # null here means inbound or some CLI actions
-    # assigned_id: Optional[uuid.UUID] = Column(default=None, ForeignKey('user.id')) # assigned user
+    editor_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id'), nullable=True) # null here means inbound or some CLI actions
+    assigned_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id'), nullable=True) # assigned user
     update_meta: Optional[dict] = Column(JSONB, nullable=True)

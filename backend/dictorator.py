@@ -1,4 +1,24 @@
-import inspect
+import inspect, dataclasses, contextlib, functools, logging
+from typing import Callable, Dict
+
+logger = logging.getLogger(__name__)
+
+@dataclasses.dataclass
+class Injector:
+    "manages injection of a special arg"
+    # todo: support async eventually maybe
+    name: str
+    type_: type
+    manager: Callable[[], contextlib.AbstractContextManager]
+
+    def decorate(self, fn):
+        "return decorated copy of fn which will inject self.name"
+        # todo: figure out how to remove self.name from the wrapped function
+        @functools.wraps(fn)
+        def outer(*args, **kwargs):
+            with self.manager() as val:
+                return fn(*args, **{self.name: val, **kwargs})
+        return outer
 
 class Dictorator(dict):
     "dictionary that registers functions with decorator"
@@ -7,17 +27,30 @@ class Dictorator(dict):
         self[f.__name__] = f
         return f
 
-    def register_subparsers(self, subparsers: 'argparse._SubParsersAction'):
-        "call this to set up argparse"
+    def register_subparsers(self, subparsers: 'argparse._SubParsersAction', injectors: 'Sequence[Injector]' = ()):
+        """
+        Call this to set up argparse.
+        todo: doc how annotations, injectors, and default affect this.
+        """
+        # todo: allow certain special params to trigger an 'injection decorator' i.e. for sqlalchemy engine
+        injectors_: Dict[str, Injector] = {(inject.name, inject.type_): inject for inject in injectors}
         for name, fn in self.items():
             p = subparsers.add_parser(name, help=fn.__doc__)
             spec = inspect.getfullargspec(fn)
+            defaults = dict(zip(spec.args[-len(spec.defaults):], spec.defaults)) if spec.defaults else {}
+            cli_args = []
             for argname in spec.args:
                 annot = spec.annotations.get(argname)
-                defaults = dict(zip(spec.args[-len(spec.defaults):], spec.defaults)) if spec.defaults else {}
+                if (inject := injectors_.get((argname, annot))):
+                    self[name] = fn = inject.decorate(fn)
+                    logger.debug('decorated %s for arg %s %s', fn, argname, annot)
+                    continue # i.e. don't put in cli_args
                 if annot is bool:
                     assert defaults.get(argname) is False # bools must be flags
                     p.add_argument('--' + argname, action='store_true')
                 else:
                     prefix = '--' if argname in defaults else ''
                     p.add_argument(prefix + argname, type=annot or str, default=defaults.get(argname))
+                cli_args.append(argname)
+            # note: if injector removed injected args from the wrapper fn, wouldn't need to track these
+            fn.__cli_args__ = cli_args

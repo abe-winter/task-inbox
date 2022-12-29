@@ -7,6 +7,7 @@ name = "pypi"
 pyyaml = "*"
 pydantic = "*"
 flask-appbuilder = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 

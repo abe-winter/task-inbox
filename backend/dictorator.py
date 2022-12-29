@@ -1,4 +1,4 @@
-import inspect, dataclasses, contextlib, functools, logging
+import inspect, dataclasses, contextlib, functools, logging, argparse
 from typing import Callable, Dict
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,10 @@ class Injector:
 
 class Dictorator(dict):
     "dictionary that registers functions with decorator"
+    def __init__(self, *args, injectors: 'Sequence[Injector]' = (), **kwargs):
+        self.injectors = injectors
+        super(*args, **kwargs)
+
     def __call__(self, f):
         "decorator"
         self[f.__name__] = f
@@ -54,3 +58,25 @@ class Dictorator(dict):
                 cli_args.append(argname)
             # note: if injector removed injected args from the wrapper fn, wouldn't need to track these
             fn.__cli_args__ = cli_args
+
+    def mkargs(self) -> argparse.ArgumentParser:
+        "return an arg parser with our known functions + their args"
+        p = argparse.ArgumentParser()
+        self.register_subparsers(
+            p.add_subparsers(dest='command', required=True),
+            self.injectors,
+        )
+        return p
+
+    def main(self):
+        "entrypoint with argparse for our known functions"
+        args = self.mkargs().parse_args()
+        # todo: add --log as var
+        # todo: have I just replicated click? why did I not like click? bad async support?
+        logging.basicConfig(level=logging.INFO)
+        fn = self[args.command]
+        fnargs = {
+            name: getattr(args, name)
+            for name in fn.__cli_args__
+        }
+        return fn(**fnargs)

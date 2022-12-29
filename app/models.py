@@ -5,7 +5,7 @@ import sqlalchemy
 from flask_appbuilder import Model
 from sqlalchemy import Column, Integer, String, ForeignKey, func, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID, BYTEA
 
 class Base(Model):
     __abstract__ = True
@@ -14,12 +14,12 @@ class Base(Model):
 
 class TaskSchema(Base):
     "container for a group of task types"
-    name: str = Column(String, primary_key=True)
+    name: str = Column(String, unique=True)
 
 class ApiKey(Base):
     "a key which external providers use to call in"
-    key: str = Column(primary_key=True)
-    tschema_id: Optional[uuid.UUID] = Column(UUID, ForeignKey('taskschema.name'), nullable=True) # recommended to restrict this to a specific provider, but not required
+    key: bytes = Column(BYTEA, primary_key=True)
+    tschema_id: Optional[uuid.UUID] = Column(UUID, ForeignKey('task_schema.id'), nullable=True) # recommended to restrict this to a specific provider, but not required
     tschema = relationship('TaskSchema')
     permissions: List[str] = Column(JSONB)
     active: bool = Column(Boolean, default=True)
@@ -27,7 +27,7 @@ class ApiKey(Base):
 
 class WebhookKey(Base):
     "a key to use for outbound webhooks for a specific provider"
-    tschema_id: str = Column(ForeignKey('taskschema.name'))
+    tschema_id: str = Column(ForeignKey('task_schema.id'))
     tschema = relationship('TaskSchema')
     key: str = Column(String)
     active: bool = Column(Boolean, default=True)
@@ -38,7 +38,7 @@ class WebhookKey(Base):
 
 class SchemaVersion(Base):
     "container for a specific version of an external app's task list"
-    tschema_id: str = Column(ForeignKey('taskschema.name'))
+    tschema_id: str = Column(ForeignKey('task_schema.id'))
     tschema = relationship('TaskSchema')
     version: int = Column(Integer) # internal version to track updates
     semver: str = Column(String) # external version string from provider
@@ -52,7 +52,7 @@ class SchemaVersion(Base):
 
 class TaskType(Base):
     "within a SchemaVersion, a named task"
-    version_id: uuid.UUID = Column(UUID, ForeignKey('schemaversion.id'))
+    version_id: uuid.UUID = Column(UUID, ForeignKey('schema_version.id'))
     version = relationship('SchemaVersion')
     name: str = Column(String)
     pending_states: List[str] = Column(JSONB)
@@ -67,7 +67,7 @@ class TaskType(Base):
 
 class Task(Base):
     "an instance of a TaskType"
-    ttype_id: uuid.UUID = Column(UUID, ForeignKey('tasktype.id'))
+    ttype_id: uuid.UUID = Column(UUID, ForeignKey('task_type.id'))
     ttype = relationship('TaskType')
     state: Optional[str] = Column(String, nullable=True)
     # user_id: Optional[uuid.UUID] = Column(UUID, default=None, ForeignKey('user.id')) # assigned user

@@ -45,6 +45,3 @@ def page_not_found(e):
         ),
         404,
     )
-
-
-db.create_all()

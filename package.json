@@ -1,0 +1,22 @@
+{
+  "name": "task-inbox",
+  "version": "0.0.1",
+  "description": "react frontend for task inbox",
+  "main": "index.js",
+  "scripts": {
+    "watch": "esbuild --watch taskui/index.jsx --bundle --outdir=app/static/js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Abe Winter <awinter.public@gmail.com>",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "esbuild": "0.16.12"
+  },
+  "dependencies": {
+    "date-fns": "^2.29.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "swr": "^2.0.0",
+    "zustand": "^4.1.5"
+  }
+}

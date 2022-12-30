@@ -8,10 +8,26 @@ from sqlalchemy import Column, Integer, String, ForeignKey, func, DateTime, Bool
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID, BYTEA
 
+def make_jsonable(val):
+    if isinstance(val, datetime):
+        return val.isoformat()
+    return val
+
 class Base(Model):
     __abstract__ = True
     id: uuid.UUID = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created: datetime = Column(DateTime, default=func.now())
+
+    def jsonable(self, include=None, exclude=()):
+        # todo: list version of this that dupes the work
+        if include is None:
+            include = list(self.__table__.columns.keys())
+        else:
+            raise NotImplementedError('todo subset fields')
+        return {
+            field: make_jsonable(getattr(self, field))
+            for field in include if field not in exclude
+        }
 
 class TaskSchema(Base):
     "container for a group of task types"
@@ -96,6 +112,9 @@ class Task(Base):
     user_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id', ondelete='CASCADE'), nullable=True) # assigned user
     resolved: bool = Column(Boolean, default=False)
     # todo: cache the merged history.update_meta somewhere
+    # todo: task comments separate from history?
+
+    # todo: conditional index of ttype where resolved=true
 
 class TaskHistory(Base):
     "task changelog"

@@ -13,9 +13,10 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 SECRET_KEY = os.environ['SECRET_KEY']
 
 # The SQLAlchemy connection string.
-SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(basedir, "app.db")
-# SQLALCHEMY_DATABASE_URI = 'mysql://myapp@localhost/myapp'
-# SQLALCHEMY_DATABASE_URI = 'postgresql://root:password@localhost/myapp'
+SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_URL']
+
+# todo: ugh support =0 or get flask's own debug var from somewhere
+FAB_API_SWAGGER_UI = bool(os.environ.get('FLASK_DEBUG'))
 
 # Flask-WTF flag for CSRF
 CSRF_ENABLED = True

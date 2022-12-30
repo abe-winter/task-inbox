@@ -8,3 +8,6 @@ psql:
 start-docker:
 	docker start $$DBNAME
 	direnv reload
+
+run:
+	flask run

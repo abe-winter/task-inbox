@@ -11,32 +11,33 @@ def dbsession() -> 'sqlalchemy.orm.Session':
     engine = create_engine(os.environ['SQLALCHEMY_URL'])
     return Session(engine)
 
-COMMANDS = Dictorator(injectors=[Injector('session', 'Session', dbsession)])
+COMMANDS = Dictorator(injectors=[Injector('session', 'sqlalchemy.orm.Session', dbsession)])
 
 class DryRun(Exception):
     "early-exit which prevents saving transaction"
 
 @COMMANDS
-def rmschema(name: str, dryrun: bool = False):
+def rmschema(session: 'sqlalchemy.orm.Session', name: str, dryrun: bool = False):
     "remove a named schema from db"
+    # todo: take version can be 'latest', 'all', or a semver
     from sqlalchemy import text, select
     from app.models import TaskSchema
-    with dbsession() as session:
-        query = select(TaskSchema).filter_by(name=name)
-        row = session.execute(query).first()
-        if not row:
-            logger.info('not found')
-            return
-        obj, = row
-        logger.info('found %s %s', obj.id, obj)
-        if dryrun:
-            raise DryRun
-        session.delete(obj)
-        session.commit()
+    query = select(TaskSchema).filter_by(name=name)
+    row = session.execute(query).first()
+    if not row:
+        logger.info('not found')
+        return
+    obj, = row
+    logger.info('found %s %s', obj.id, obj)
+    if dryrun:
+        raise DryRun
+    session.delete(obj)
+    session.commit()
+    logger.info('deleted')
 
 @COMMANDS
-def taskschema(path: str, dryrun: bool = False):
-    "set a task schema from yaml file"
+def taskschema(session: 'sqlalchemy.orm.Session', path: str, dryrun: bool = False):
+    "set or upgrade a task schema from yaml file"
     import yaml
     from sqlalchemy import text, select
     from backend.taskschema import TaskSchemaSchema
@@ -44,65 +45,94 @@ def taskschema(path: str, dryrun: bool = False):
     blob = yaml.safe_load(open(path))
     schema = TaskSchemaSchema.parse_obj(blob)
     logger.info('parsed schema %s version %s with %d tasks', schema.name, schema.semver, len(schema.tasktypes))
-    with dbsession() as session:
-        existing = session.execute(schema_name=schema.name).first()
-        new_ver = SchemaVersion(
-            version=0,
-            semver=schema.semver,
-            default_hook_url=schema.default_hook_url,
-            hook_auth=schema.hook_auth,
-        )
-        if not existing:
-            logger.info('creating new schema + version 0')
-            row = TaskSchema(id=uuid.uuid4(), name=schema.name)
-            session.add(row)
-            new_ver.tschema_id = row.id
-            session.add(new_ver)
-        else:
-            old_ver, = existing
-            logger.info('%s has old version %d', schema.name, old_ver.version)
-            new_ver.tschema_id = old_ver.tschema_id
-            new_ver.version = old_ver.version + 1
-            session.add(new_ver)
-        for ttype in schema.tasktypes:
-            # todo: is new_ver.id right here? if yes remove id= force in TaskSchema above
-            session.add(TaskType(
-                version_id=new_ver.id,
-                name=ttype.name,
-                pending_states=ttype.pending_states,
-                resolved_states=ttype.resolved_states,
-            ))
-        logger.info('inserted %d tasktypes', len(schema.tasktypes))
-        if dryrun:
-            raise DryRun
-        session.commit()
+    existing = session.execute(SchemaVersion.latest(schema.name)).first()
+    new_ver = SchemaVersion(
+        version=0,
+        semver=schema.semver,
+        default_hook_url=schema.default_hook_url,
+        hook_auth=schema.hook_auth,
+    )
+    if not existing:
+        logger.info('creating new schema + initial version')
+        row = TaskSchema(name=schema.name)
+        session.add(row)
+        new_ver.tschema = row
+        session.add(new_ver)
+    else:
+        old_ver, = existing
+        logger.info('%s has old version %d', schema.name, old_ver.version)
+        if old_ver.semver == new_ver.semver:
+            raise KeyError(old_ver.semver, 'semver would collide')
+        new_ver.tschema_id = old_ver.tschema_id
+        new_ver.version = old_ver.version + 1
+        session.add(new_ver)
+    for ttype in schema.tasktypes:
+        session.add(TaskType(
+            version=new_ver,
+            name=ttype.name,
+            pending_states=ttype.pending_states,
+            resolved_states=ttype.resolved_states,
+        ))
+    logger.info('inserted %d tasktypes', len(schema.tasktypes))
+    if dryrun:
+        raise DryRun
+    session.commit()
 
 @COMMANDS
-def schemas(session: 'Session'):
+def schemas(session: 'sqlalchemy.orm.Session'):
     "list schemas"
     from sqlalchemy import select
     from app.models import TaskSchema
+    from app.util import table
     rows = session.execute(select(TaskSchema))
-    print('rows', rows)
+    table([('name', 'created')] + [
+        (row.name, row.created.date())
+        for row, in rows
+    ])
 
 @COMMANDS
-def tasks(schema_name: str):
-    "list tasks in schema"
+def tasktypes(session: 'sqlalchemy.orm.Session', schema_name: str):
+    "list task types in schema"
     from sqlalchemy import select
     from app.models import TaskType, SchemaVersion, TaskSchema
-    with dbsession() as session:
-        rows = session.execute
-        raise NotImplementedError
+    from app.util import table
+    query = SchemaVersion.join_latest(schema_name, select(TaskType))
+    rows = session.execute(query)
+    table([('name', 'created', 'pending', 'resolved')] + [
+        (row.name, row.created.date(), ','.join(row.pending_states), ','.join(row.resolved_states))
+        for row, in rows
+    ])
 
 @COMMANDS
-def mktask(schema_name: str, task_name: str):
-    "insert a task"
+def tasks(session: 'sqlalchemy.orm.Session', schema_name: str, task_type: str):
+    "list tasks of type in schema"
+    # note: this includes all schema versions; add way to filter latest only? may not matter
     from sqlalchemy import select
-    from app.models import TaskType, SchemaVersion, TaskSchema
-    with dbsession() as session:
-        query = SchemaVersion.latest(select(TaskType).filter_by(name=task_name), schema_name=schema_name)
-        print(query)
-    raise NotImplementedError
+    from app.models import TaskType, TaskSchema, Task, SchemaVersion
+    from app.util import table
+    query = select(Task) \
+        .join(TaskType).filter_by(name=task_type) \
+        .join(SchemaVersion) \
+        .join(TaskSchema).filter_by(name=schema_name)
+    rows = session.execute(query)
+    table([('id', 'created', 'state', 'resolved')] + [
+        (row.id, row.created.strftime('%m/%d %H:%M'), row.state, row.resolved)
+        for row, in rows
+    ])
+
+@COMMANDS
+def mktask(session: 'sqlalchemy.orm.Session', schema_name: str, task_name: str, meta: str = 'null', state: str = None):
+    "insert a task to the specified schema + type. meta should be json-parseable"
+    from sqlalchemy import select
+    from app.models import TaskType, SchemaVersion, TaskHistory, TaskHistory, Task
+    query = SchemaVersion.join_latest(schema_name, select(TaskType).filter_by(name=task_name))
+    ttype, = session.execute(query).first()
+    logger.info('found type %s', ttype.name)
+    task = Task(ttype=ttype, state=state, resolved=ttype.state_resolved(state, crash=True) if state is not None else False)
+    session.add(task)
+    session.add(TaskHistory.from_task(task, meta_diff=json.loads(meta)))
+    session.commit()
+    logger.info('created task and history')
 
 if __name__ == '__main__':
     COMMANDS.main()

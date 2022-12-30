@@ -52,14 +52,16 @@ class SchemaVersion(Base):
     )
 
     @classmethod
-    def latest(cls, query: 'Optional[sqlalchemy.sql.Select]' = None, schema_name: Optional[str] = None) -> 'sqlalchemy.sql.Select':
-        "extend a query to use the latest schema version. optionally also specify the schema name"
-        # todo: use inner select instead of join().limit(1) so it doesn't force the cardinality of the other tables to be 1
-        query = query or sqlalchemy.select(cls)
-        query = query.join(cls).order_by(sqlalchemy.text('version desc')).limit(1)
-        if schema_name:
-            query = query.join(TaskSchema).where(TaskSchema.name == schema_name)
-        return query
+    def latest(cls, schema_name: str, for_sub=False) -> 'sqlalchemy.sql.Select':
+        "create query to get latest version row for named schema"
+        return sqlalchemy.select(cls.id if for_sub else cls).order_by(sqlalchemy.text('version desc')).limit(1) \
+            .join(TaskSchema).filter_by(name=schema_name)
+
+    @classmethod
+    def join_latest(cls, schema_name: str, query: 'Optional[sqlalchemy.sql.Select]', col='version_id') -> 'sqlalchemy.sql.Select':
+        "extend a query to use the latest schema version"
+        # return query.filter_by(version_id=maxver.scalar_subquery())
+        return query.filter_by(**{col: cls.latest(schema_name, for_sub=True).scalar_subquery()})
 
 class TaskType(Base):
     "within a SchemaVersion, a named task"
@@ -75,6 +77,16 @@ class TaskType(Base):
     __table_args__ = (
         UniqueConstraint('version_id', 'name'),
     )
+
+    def state_resolved(self, state: str, crash=False) -> Optional[bool]:
+        "translate string state to bool resolved status. optionally crash if missing"
+        if state in self.pending_states:
+            return False
+        elif state in self.resolved_states:
+            return True
+        elif crash:
+            raise KeyError(state, f'not in pending {self.pending_states} or resolved {self.resolved_states}')
+        return None
 
 class Task(Base):
     "an instance of a TaskType"
@@ -94,3 +106,14 @@ class TaskHistory(Base):
     editor_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id', ondelete='SET NULL'), nullable=True) # null here means inbound or some CLI actions
     assigned_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id', ondelete='SET NULL'), nullable=True) # assigned user
     update_meta: Optional[dict] = Column(JSONB, nullable=True)
+
+    @classmethod
+    def from_task(cls, task: Task, editor_id: Optional[int] = None, meta_diff: Optional[dict] = None) -> 'TaskHistory':
+        return cls(
+            task=task,
+            state=task.state,
+            resolved=task.resolved,
+            editor_id=editor_id,
+            assigned_id=task.user_id,
+            update_meta=meta_diff,
+        )

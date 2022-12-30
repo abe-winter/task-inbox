@@ -1,5 +1,5 @@
 # sample task schema
-name: 't-i:sample'
+name: 'ti:sample'
 semver: '0'
 tasktypes:
 - name: delete-acct

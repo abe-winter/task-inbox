@@ -55,14 +55,18 @@ class TasksRest(BaseApi):
     @expose('/')
     @protect(allow_browser_login=True)
     def get_list(self):
-        # todo: paging
-        # todo: filter type, resolved, assigned
+        pagelen = 100 # todo: real paging, shrink this to 10
         resolved = flask.request.args.get('resolved')
-        schema_name = flask.request.args.get('schema')
-        ttype_name = flask.request.args.get('ttype')
+        # schema_name = flask.request.args.get('schema') # todo: filter me
+        # ttype_name = flask.request.args.get('ttype') # todo: filter me
         session = appbuilder.get_session()
         # todo: figure out n+1 / join load here
-        query = select(Task).order_by(text('created')).join(TaskType).join(SchemaVersion).join(TaskSchema)
+        query = select(Task)
+        if resolved == 'un':
+            query = query.filter_by(resolved=False)
+        # todo: make sure this is a single load
+        query = query.order_by(text('created')).limit(pagelen) \
+            .join(TaskType).join(SchemaVersion).join(TaskSchema)
         rows = [row for row, in session.execute(query)]
         return {
             'tasks': [row.jsonable() for row in rows],

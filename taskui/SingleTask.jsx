@@ -12,12 +12,13 @@ async function setTaskState(taskId, state) {
 
 function StateBtn({ taskId, label, resolved, historyUrl }) {
   const setLocalTaskState = useStore(state => state.setTaskState);
+  const taskUrl = useStore(state => state.taskUrl);
   const { mutate } = useSWRConfig();
   async function setState() {
     const { task } = await setTaskState(taskId, label);
     setLocalTaskState(taskId, label, task.resolved);
     mutate(historyUrl);
-    mutate('/api/v1/tasks', null, {
+    mutate(taskUrl, null, {
       populateCache: (newVal, oldData) => ({
         ...oldData,
         tasks: oldData.tasks.map(item => item.id == taskId ? task : item),
@@ -31,8 +32,6 @@ function StateBtn({ taskId, label, resolved, historyUrl }) {
 }
 
 export function SingleTask({ task }) {
-  if (task == null)
-    return <></>;
   const historyUrl = `/api/v1/tasks/${task.id}/history`;
   const { data, error, isLoading } = useSWR(historyUrl, fetcher);
   // todo: merge meta blobs instead of showing first
@@ -44,7 +43,7 @@ export function SingleTask({ task }) {
         <span className="ms-2 badge text-bg-primary">{task.state}</span>
       </h4>
       <div className="text-muted">
-        {format(new Date(task.created), 'PPPPppp')}
+        submitted {format(new Date(task.created), 'PPPPppp')}
       </div>
       <hr />
       <h5>Set state</h5>
@@ -56,24 +55,34 @@ export function SingleTask({ task }) {
       {data?.history[0]?.update_meta != null && <>
         <hr />
         <table className="table"><tbody>
-          {Object.entries(data.history[0].update_meta).map(renderMetaRow)}
+          {Object.entries(data.history[0].update_meta).map(([key, val]) => <MetaRow key={key} field={key} val={val} />)}
         </tbody></table>
       </>}
     </div></div>
     {isLoading ? <div>Loading history ...</div>
       : error ? <div className="alert alert-danger">{error.toString()}</div>
       : <div className="">
-        {data.history.slice(1).map((update, i) => <div key={update.id} className="card mb-2"><div className="card-body">
-          state <b>{update.state || '(unset)'}</b>
-          <div className="text-muted">{format(new Date(update.created), 'Pppp')}</div>
-        </div></div>)}
+        {data.history.slice(1).map(update => <HistoryCard key={update.id} update={update} />)}
       </div>}
   </div>;
 }
 
-function renderMetaRow([key, val]) {
-  const [keyName, keyType] = key.split('__');
-  return (<tr key={key}>
+function HistoryCard({ update, i }) {
+  return (<div className="mb-2">
+    <div className="row">
+      <div className="col-md">
+        state {update.state ? <b>{update.state}</b> : <span className="text-muted">unset</span>}
+      </div>
+      <div className="col-md">
+        <div className="text-muted">{format(new Date(update.created), 'Pppp')}</div>
+      </div>
+    </div>
+  </div>);
+}
+
+function MetaRow({ field, val }) {
+  const [keyName, keyType] = field.split('__');
+  return (<tr>
     <td>{keyName}</td>
     <td>{keyType == 'preview' ? <a href={val}>{val}</a> : val}</td>
   </tr>);

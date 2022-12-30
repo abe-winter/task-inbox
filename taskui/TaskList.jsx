@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useSWR from 'swr';
 import { format, formatRelative } from 'date-fns';
-import { useStore } from './store';
+import { useStore, baseTaskUrl } from './store';
 import { ErrorBoundary, fetcher } from './components.jsx';
 
 export function TaskListItem({ task, types }) {
@@ -30,10 +30,22 @@ export function TaskListItem({ task, types }) {
 }
 
 export function TaskList() {
-  const { data, error, isLoading } = useSWR('/api/v1/tasks', fetcher);
+  const taskUrl = useStore(state => state.taskUrl);
+  const setTaskUrl = useStore(state => state.setTaskUrl);
+  const { data, error, isLoading } = useSWR(taskUrl, fetcher);
+
   return <div>
     <h4 className="d-none d-md-block">Task list</h4>
-    <div className="alert alert-secondary">todo filter settings</div>
+    <fieldset className="card mb-2"><div className="card-body">
+      {['un', 'all'].map(val => (<div key={val} className="me-2" style={{ display: 'inline-block' }}>
+        <input type="radio" className="btn-check" name="unresolved" autoComplete="off"
+          id={`option-${val}`}
+          defaultChecked={val == 'un'}
+          onChange={() => setTaskUrl(`${baseTaskUrl}?resolved=${val}`)}
+          />
+        <label className="btn btn-secondary" htmlFor={`option-${val}`}>{val}</label>
+      </div>))}
+    </div></fieldset>
     {isLoading ? <div>Loading ...</div>
       : error ? <div className="alert alert-danger">{error.toString()}</div>
       : <div className="list-group">

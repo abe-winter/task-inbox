@@ -13,7 +13,7 @@ function TaskUi(props) {
         <TaskList />
       </div>
       <div className="col">
-        <SingleTask task={task} />
+        {task != null && <SingleTask task={task} />}
       </div>
     </div>
   </div>;

@@ -55,6 +55,8 @@ class Dictorator(dict):
                 else:
                     prefix = '--' if argname in defaults else ''
                     p.add_argument(prefix + argname, type=annot or str, default=defaults.get(argname))
+                # todo: literal -> choices
+                # todo: list -> n='+'
                 cli_args.append(argname)
             # note: if injector removed injected args from the wrapper fn, wouldn't need to track these
             fn.__cli_args__ = cli_args

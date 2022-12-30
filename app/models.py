@@ -4,7 +4,7 @@ from typing import List, Optional
 import sqlalchemy
 from flask_appbuilder import Model
 from flask_appbuilder.security.sqla.models import User
-from sqlalchemy import Column, Integer, String, ForeignKey, func, DateTime, ForeignKey, Boolean, UniqueConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, func, DateTime, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB, UUID, BYTEA
 
@@ -28,7 +28,7 @@ class ApiKey(Base):
 
 class WebhookKey(Base):
     "a key to use for outbound webhooks for a specific provider"
-    tschema_id: str = Column(ForeignKey('task_schema.id'))
+    tschema_id: str = Column(ForeignKey('task_schema.id', ondelete='CASCADE'))
     tschema = relationship('TaskSchema')
     key: str = Column(String)
     active: bool = Column(Boolean, default=True)
@@ -39,7 +39,7 @@ class WebhookKey(Base):
 
 class SchemaVersion(Base):
     "container for a specific version of an external app's task list"
-    tschema_id: str = Column(ForeignKey('task_schema.id'))
+    tschema_id: str = Column(ForeignKey('task_schema.id', ondelete='CASCADE'))
     tschema = relationship('TaskSchema')
     version: int = Column(Integer) # internal version to track updates
     semver: str = Column(String) # external version string from provider
@@ -63,7 +63,7 @@ class SchemaVersion(Base):
 
 class TaskType(Base):
     "within a SchemaVersion, a named task"
-    version_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('schema_version.id'))
+    version_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('schema_version.id', ondelete='CASCADE'))
     version = relationship('SchemaVersion')
     name: str = Column(String)
     pending_states: List[str] = Column(JSONB)
@@ -78,18 +78,19 @@ class TaskType(Base):
 
 class Task(Base):
     "an instance of a TaskType"
-    ttype_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('task_type.id'))
+    ttype_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('task_type.id', ondelete='CASCADE'))
     ttype = relationship('TaskType')
     state: Optional[str] = Column(String, nullable=True)
-    user_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id'), nullable=True) # assigned user
+    user_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id', ondelete='CASCADE'), nullable=True) # assigned user
     resolved: bool = Column(Boolean, default=False)
+    # todo: cache the merged history.update_meta somewhere
 
 class TaskHistory(Base):
     "task changelog"
-    task_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('task.id'))
+    task_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('task.id', ondelete='SET NULL'))
     task = relationship('Task')
     state: Optional[str] = Column(String, nullable=True)
     resolved: bool = Column(Boolean, default=False)
-    editor_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id'), nullable=True) # null here means inbound or some CLI actions
-    assigned_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id'), nullable=True) # assigned user
+    editor_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id', ondelete='SET NULL'), nullable=True) # null here means inbound or some CLI actions
+    assigned_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id', ondelete='SET NULL'), nullable=True) # assigned user
     update_meta: Optional[dict] = Column(JSONB, nullable=True)

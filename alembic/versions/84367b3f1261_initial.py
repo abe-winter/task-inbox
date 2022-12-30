@@ -1,17 +1,17 @@
-"""user, constraints
+"""initial
 
-Revision ID: 481b58c4af88
-Revises: b084e91fa2a0
-Create Date: 2022-12-29 01:58:39.947530
+Revision ID: 84367b3f1261
+Revises: 
+Create Date: 2022-12-29 19:27:02.535295
 
 """
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '481b58c4af88'
-down_revision = 'b084e91fa2a0'
+revision = '84367b3f1261'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -69,6 +69,13 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
+    op.create_table('task_schema',
+    sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('created', sa.DateTime(), nullable=True),
+    sa.Column('name', sa.String(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
     op.create_table('ab_permission_view',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('permission_id', sa.Integer(), nullable=True),
@@ -87,6 +94,40 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', 'role_id')
     )
+    op.create_table('api_key',
+    sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('created', sa.DateTime(), nullable=True),
+    sa.Column('key', postgresql.BYTEA(), nullable=False),
+    sa.Column('tschema_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('permissions', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('active', sa.Boolean(), nullable=True),
+    sa.Column('name', sa.String(), nullable=True),
+    sa.ForeignKeyConstraint(['tschema_id'], ['task_schema.id'], ),
+    sa.PrimaryKeyConstraint('id', 'key')
+    )
+    op.create_table('schema_version',
+    sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('created', sa.DateTime(), nullable=True),
+    sa.Column('tschema_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('version', sa.Integer(), nullable=True),
+    sa.Column('semver', sa.String(), nullable=True),
+    sa.Column('default_hook_url', sa.String(), nullable=True),
+    sa.Column('hook_auth', sa.String(), nullable=True),
+    sa.ForeignKeyConstraint(['tschema_id'], ['task_schema.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('tschema_id', 'semver'),
+    sa.UniqueConstraint('tschema_id', 'version')
+    )
+    op.create_table('webhook_key',
+    sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('created', sa.DateTime(), nullable=True),
+    sa.Column('tschema_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('key', sa.String(), nullable=True),
+    sa.Column('active', sa.Boolean(), nullable=True),
+    sa.ForeignKeyConstraint(['tschema_id'], ['task_schema.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('tschema_id', 'key')
+    )
     op.create_table('ab_permission_view_role',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('permission_view_id', sa.Integer(), nullable=True),
@@ -96,34 +137,57 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('permission_view_id', 'role_id')
     )
-    op.create_unique_constraint(None, 'schema_version', ['tschema_id', 'semver'])
-    op.create_unique_constraint(None, 'schema_version', ['tschema_id', 'version'])
-    op.add_column('task', sa.Column('user_id', sa.Integer(), nullable=True))
-    op.create_foreign_key(None, 'task', 'ab_user', ['user_id'], ['id'])
-    op.add_column('task_history', sa.Column('editor_id', sa.Integer(), nullable=True))
-    op.add_column('task_history', sa.Column('assigned_id', sa.Integer(), nullable=True))
-    op.create_foreign_key(None, 'task_history', 'ab_user', ['editor_id'], ['id'])
-    op.create_foreign_key(None, 'task_history', 'ab_user', ['assigned_id'], ['id'])
-    op.create_unique_constraint(None, 'task_type', ['version_id', 'name'])
-    op.create_unique_constraint(None, 'webhook_key', ['tschema_id', 'key'])
+    op.create_table('task_type',
+    sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('created', sa.DateTime(), nullable=True),
+    sa.Column('version_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('name', sa.String(), nullable=True),
+    sa.Column('pending_states', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('resolved_states', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.ForeignKeyConstraint(['version_id'], ['schema_version.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('version_id', 'name')
+    )
+    op.create_table('task',
+    sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('created', sa.DateTime(), nullable=True),
+    sa.Column('ttype_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('state', sa.String(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('resolved', sa.Boolean(), nullable=True),
+    sa.ForeignKeyConstraint(['ttype_id'], ['task_type.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['ab_user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('task_history',
+    sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('created', sa.DateTime(), nullable=True),
+    sa.Column('task_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('state', sa.String(), nullable=True),
+    sa.Column('resolved', sa.Boolean(), nullable=True),
+    sa.Column('editor_id', sa.Integer(), nullable=True),
+    sa.Column('assigned_id', sa.Integer(), nullable=True),
+    sa.Column('update_meta', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.ForeignKeyConstraint(['assigned_id'], ['ab_user.id'], ),
+    sa.ForeignKeyConstraint(['editor_id'], ['ab_user.id'], ),
+    sa.ForeignKeyConstraint(['task_id'], ['task.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_constraint(None, 'webhook_key', type_='unique')
-    op.drop_constraint(None, 'task_type', type_='unique')
-    op.drop_constraint(None, 'task_history', type_='foreignkey')
-    op.drop_constraint(None, 'task_history', type_='foreignkey')
-    op.drop_column('task_history', 'assigned_id')
-    op.drop_column('task_history', 'editor_id')
-    op.drop_constraint(None, 'task', type_='foreignkey')
-    op.drop_column('task', 'user_id')
-    op.drop_constraint(None, 'schema_version', type_='unique')
-    op.drop_constraint(None, 'schema_version', type_='unique')
+    op.drop_table('task_history')
+    op.drop_table('task')
+    op.drop_table('task_type')
     op.drop_table('ab_permission_view_role')
+    op.drop_table('webhook_key')
+    op.drop_table('schema_version')
+    op.drop_table('api_key')
     op.drop_table('ab_user_role')
     op.drop_table('ab_permission_view')
+    op.drop_table('task_schema')
     op.drop_table('ab_view_menu')
     op.drop_table('ab_user')
     op.drop_table('ab_role')

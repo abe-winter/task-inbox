@@ -16,3 +16,9 @@ export class ErrorBoundary extends React.Component {
       : this.props.children;
   }
 }
+
+export async function fetcher(url) {
+  const res = await fetch(url);
+  if (res.status == 200) return await res.json();
+  throw Error(`${res.status} ${await res.text()}`);
+}

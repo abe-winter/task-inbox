@@ -5,7 +5,7 @@ import { SingleTask } from './SingleTask.jsx';
 import { useStore } from './store';
 
 function TaskUi(props) {
-  const taskId = useStore(state => state.taskId);
+  const task = useStore(state => state.task);
   // todo: some kind of auth check boundary
   return <div className="container">
     <div className="row">
@@ -13,7 +13,7 @@ function TaskUi(props) {
         <TaskList />
       </div>
       <div className="col">
-        <SingleTask taskId={taskId} />
+        <SingleTask task={task} />
       </div>
     </div>
   </div>;

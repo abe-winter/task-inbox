@@ -3,7 +3,7 @@ from flask_appbuilder import BaseView, ModelView, ModelRestApi, MasterDetailView
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from sqlalchemy import select
 from .main import appbuilder, db # yes circular but it's from their boilerplate
-from .models import Task, TaskType, SchemaVersion, TaskSchema
+from .models import Task, TaskType, SchemaVersion, TaskSchema, TaskHistory
 
 class TasksListView(ModelView):
     datamodel = SQLAInterface(Task)
@@ -25,6 +25,31 @@ class TasksRest(ModelRestApi):
     # add_exclude_columns = ['created']
     list_columns = ['ttype_id', 'state', 'user_id', 'resolved', 'created']
     # todo: field permissions
+
+    @expose('/<task_id>')
+    def get(self, task_id):
+        # todo: include user info
+        session = appbuilder.get_session()
+        query = select(Task).filter_by(id=task_id).join(TaskType)
+        row, = session.execute(query).first()
+
+        return {
+            'task': task.jsonable(),
+            'type': task.ttype.jsonable(),
+        }
+
+    @expose('/<task_id>/history')
+    def get_history(self, task_id):
+        "get task history"
+        # todo: page / limit history
+        session = appbuilder.get_session()
+        query = select(TaskHistory).order_by('created').join(Task).filter_by(id=task_id)
+        return {
+            'history': [
+                row.jsonable()
+                for row, in session.execute(query)
+            ]
+        }
 
     @expose('/')
     def get_list(self):

@@ -11,3 +11,9 @@ start-docker:
 
 run:
 	flask run
+
+bin/git-bug:
+	mkdir -p `dirname $@`
+	wget https://github.com/MichaelMure/git-bug/releases/download/v0.8.0/git-bug_linux_amd64
+	mv git-bug_linux_amd64 $@
+	chmod +x $@

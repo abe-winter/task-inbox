@@ -1,5 +1,6 @@
 .direnv/
 __pycache__/
+bin/
 
 # fab gitignore
 *.pyc

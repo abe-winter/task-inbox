@@ -3,7 +3,7 @@
 # it doesn't install anything
 
 # note: I think direnv will install pipenv in the virtualenv? If not, add it here.
-tools="python3 direnv docker"
+tools="python3 direnv docker git-bug pipenv"
 
 for tool in $tools; do
   if ! command -v $tool &> /dev/null; then

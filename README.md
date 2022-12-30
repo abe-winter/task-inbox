@@ -2,12 +2,26 @@
 
 This is a 'shared task inbox' for small teams.
 
-It allows you to:
+## Current features
+
 - create tasks programmatically via API
 - receive webhooks on your server when a task changes status
 - log in to a UX to view and resolve pending tasks
 - keep a paper trail
 - responsive enough to use on mobile web
+
+## Operations
+
+(These are possibly out-of-date links to [operations.md](./operations.md))
+
+- [local tools setup](./operations.md#local-tools-setup)
+- [create a user](./operations.md#create-user)
+- [create a task schema](./operations.md#task-schema)
+- [run local dev server](./operations.md#dev-server)
+- [set up inbound webhook auth](./operations.md#inbound-auth)
+- [set up outbound webhook auth](./operations.md#outbound-auth)
+- [run on helm](./operations.md#run-helm)
+- [database migrations](./operations.md#db-migrations)
 
 ## Roadmap
 
@@ -53,40 +67,6 @@ I shopped around a lot before building this. Without naming names:
 - Moderation tools sort are expensive, AI-heavy (= unclear privacy), not designed for one-person teams, and I'm not sure they support other kinds of service tasks
 - A shared team email tool that claimed to support tasks in their API but did not
 
-## dev operations
+## Bugs
 
-### local dev setup
-
-Run `./tools.sh` for hints about which tools you're missing.
-
-These will fail if you don't have the tools installed, but try something like:
-
-```
-direnv allow
-
-make db
-make psql # to make sure you can access the db. use \q to quit
-
-pipenv sync
-alembic upgrade head
-```
-
-### DB migrations
-
-```
-# autogenerate a migration
-alembic revision --autogenerate -m "short description"
-
-# run migrations
-alembic upgrade head
-```
-
-### fab instructions
-
-```sh
-export FLASK_APP=app
-# Create an admin user
-flask fab create-admin
-# Run dev server
-flask run
-```
+Are tracked using [git-bug](https://github.com/MichaelMure/git-bug) for now.

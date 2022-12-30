@@ -110,7 +110,7 @@ class Task(Base):
     ttype_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('task_type.id', ondelete='CASCADE'))
     ttype = relationship('TaskType')
     state: Optional[str] = Column(String, nullable=True)
-    user_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id', ondelete='CASCADE'), nullable=True) # assigned user
+    user_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id', ondelete='SET NULL'), nullable=True) # assigned user
     resolved: bool = Column(Boolean, default=False)
     # todo: cache the merged history.update_meta somewhere
     # todo: task comments separate from history?
@@ -119,6 +119,7 @@ class Task(Base):
 
 class TaskHistory(Base):
     "task changelog"
+    # on delete null because we don't want to lose paper trail
     task_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('task.id', ondelete='SET NULL'))
     task = relationship('Task')
     state: Optional[str] = Column(String, nullable=True)

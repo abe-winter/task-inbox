@@ -1,6 +1,7 @@
 .direnv/
 __pycache__/
 bin/
+secrets.env
 
 # fab gitignore
 *.pyc

@@ -128,11 +128,38 @@ def mktask(session: 'sqlalchemy.orm.Session', schema_name: str, task_name: str, 
     query = SchemaVersion.join_latest(schema_name, select(TaskType).filter_by(name=task_name))
     ttype, = session.execute(query).first()
     logger.info('found type %s', ttype.name)
-    task = Task(ttype=ttype, state=state, resolved=ttype.state_resolved(state, crash=True) if state is not None else False)
-    session.add(task)
-    session.add(TaskHistory.from_task(task, meta_diff=json.loads(meta)))
+    Task.make(session, ttype, state, json.loads(meta))
     session.commit()
     logger.info('created task and history')
+
+@COMMANDS
+def post_task(host='http://localhost:5000', schema_name='ti:sample', task_name='flag-content', key_var='LOCAL_INBOUND_API_KEY'):
+    "post a task via webhook"
+    import requests # note, dev-only in Pipfile
+    from app.messagetypes import PostTask
+    body = PostTask(schema_name=schema_name, task=task_name)
+    if key_var not in os.environ:
+        raise KeyError(key_var, 'not found in environment; create a key with ./cli.py api_key and set it in secrets.env')
+    res = requests.post(f'{host}/api/v1/tasks/', json=body.dict(), headers={'api-key': os.environ[key_var]})
+    res.raise_for_status()
+    body = res.json()
+    logger.info('ok %s %s', body['id'], body)
+
+@COMMANDS
+def api_key(session: 'sqlalchemy.orm.Session', schema_name: str = None, name: str = None, keylen: int = 12):
+    "make an API key"
+    import secrets
+    from sqlalchemy import select
+    from app.models import ApiKey, TaskSchema
+    task_schema = None
+    if schema_name:
+        task_schema, = session.execute(select(TaskSchema).filter_by(name=schema_name)).first()
+        logger.info('found task schema %s', task_schema)
+    key = secrets.token_urlsafe(keylen)
+    print('your new key is', key)
+    session.add(ApiKey(key=key, tschema=task_schema, name=name))
+    session.commit()
+    logger.info('key created')
 
 if __name__ == '__main__':
     COMMANDS.main()

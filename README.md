@@ -1,14 +1,12 @@
 # task-inbox
 
-This is a 'shared task inbox' for small teams.
+This is a 'shared task inbox' for small teams. It lets you post tasks via API and triggers webhooks when you resolve them or otherwise change their state. It previews attachments for the tasks. You'd think this would be easy to find on the market / existing OSS.
 
-## Current features
+## Working features
 
 - create tasks programmatically via API
+- web UX that works on mobile
 - receive webhooks on your server when a task changes status
-- log in to a UX to view and resolve pending tasks
-- keep a paper trail
-- responsive enough to use on mobile web
 
 ## Operations
 

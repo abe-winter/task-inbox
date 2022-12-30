@@ -49,6 +49,9 @@ export function TaskList() {
     {isLoading ? <div>Loading ...</div>
       : error ? <div className="alert alert-danger">{error.toString()}</div>
       : <div className="list-group">
+        {data.tasks.length == 0 && <div className="alert alert-secondary">
+          No tasks match filter! You're done. Click 'all' above to see resolved tasks.
+        </div>}
         {data.tasks.map(task => (<ErrorBoundary key={task.id}>
           <TaskListItem task={task} types={data.types} />
         </ErrorBoundary>))}

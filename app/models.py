@@ -36,7 +36,8 @@ class TaskSchema(Base):
 
 class ApiKey(Base):
     "a key which external providers use to call in"
-    key: bytes = Column(BYTEA, primary_key=True)
+    id = None
+    key: str = Column(String, primary_key=True)
     tschema_id: Optional[uuid.UUID] = Column(UUID(as_uuid=True), ForeignKey('task_schema.id'), nullable=True) # recommended to restrict this to a specific provider, but not required
     tschema = relationship('TaskSchema')
     permissions: List[str] = Column(JSONB)
@@ -116,6 +117,14 @@ class Task(Base):
     # todo: task comments separate from history?
 
     # todo: conditional index of ttype where resolved=true
+
+    @classmethod
+    def make(cls, session: 'sqlalchemy.orm.Session', ttype: TaskType, state: Optional[str] = None, meta: Optional[dict] = None) -> 'Task':
+        "create w/ dependencies"
+        task = Task(ttype=ttype, state=state, resolved=ttype.state_resolved(state, crash=True) if state is not None else False)
+        session.add(task)
+        session.add(TaskHistory.from_task(task, meta_diff=meta))
+        return task
 
 class TaskHistory(Base):
     "task changelog"

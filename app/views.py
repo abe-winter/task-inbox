@@ -6,6 +6,10 @@ from flask_appbuilder.models.sqla.interface import SQLAInterface
 from sqlalchemy import select, text
 from .main import appbuilder, db # yes circular but it's from their boilerplate
 from .models import Task, TaskType, SchemaVersion, TaskSchema, TaskHistory
+from .auth import apikey_auth
+from .messagetypes import PostTask
+
+# todo: get_session may be causing lock issues -- make sure I'm not supposed to be decorating
 
 class TasksListView(ModelView):
     datamodel = SQLAInterface(Task)
@@ -75,6 +79,19 @@ class TasksRest(BaseApi):
                 for row in rows
             },
         }
+
+    @expose('/', methods=['POST'])
+    @apikey_auth()
+    def post_new_task(self):
+        if flask.g.apikey_auth.tschema_id:
+            raise NotImplementedError('this api key is permissioned, check pls')
+        body = PostTask.parse_obj(flask.request.json)
+        session = appbuilder.get_session()
+        query = SchemaVersion.join_latest(body.schema_name, select(TaskType).filter_by(name=body.task))
+        ttype, = session.execute(query).first() # todo: 404 on fail
+        task = Task.make(session, ttype, body.state, body.meta)
+        session.commit()
+        return task.jsonable()
 
 appbuilder.add_api(TasksRest)
 

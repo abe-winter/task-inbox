@@ -9,9 +9,10 @@ export function TaskListItem({ task, types }) {
   const isSelected = task.id == selectedTaskId;
   const anySelected = selectedTaskId != null;
   const setTask = useStore(state => state.setTask);
+  const ttype = types[task.ttype_id];
   return <div
     className={`list-group-item ${!isSelected && anySelected ? 'd-none d-md-block' : ''}`}
-    onClick={() => isSelected ? setTask(null) : setTask({ ...task, type: types[task.ttype_id] })}
+    onClick={() => isSelected ? setTask(null) : setTask({ ...task, type: ttype })}
     style={{ background: isSelected ? '#ddd' : null }}
     >
     <span style={{ width: '1em', display: 'inline-block' }}>
@@ -19,12 +20,12 @@ export function TaskListItem({ task, types }) {
     </span>
     <input type="checkbox" className="form-check-input" checked={task.resolved} readOnly />
     <span className="ms-2"><strong>
-      {types[task.ttype_id]?.name || task.ttype_id}
+      {ttype == null ? task.ttype_id : `${ttype.schema_name} ${ttype.name}`}
     </strong></span>
-    <span className="ms-2">{task.state}</span>
-    <span className="ms-2 text-muted">
+    <span className="ms-2 badge text-bg-secondary">{task.state}</span>
+    <div className="ms-2 text-muted">
       {formatRelative(new Date(task.created), new Date())}
-    </span>
+    </div>
   </div>;
 }
 

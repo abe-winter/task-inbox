@@ -45,6 +45,7 @@ class TasksRest(BaseApi):
         task = session.get(Task, task_id)
         if task.state != state:
             task.state = state
+            task.editor_id = flask.g.user.id
             task.resolved = task.ttype.state_resolved(state, crash=True) if state else False
             session.add(task)
             session.add(TaskHistory.from_task(task))
@@ -56,13 +57,17 @@ class TasksRest(BaseApi):
     def get_list(self):
         # todo: paging
         # todo: filter type, resolved, assigned
+        resolved = flask.request.args.get('resolved')
+        schema_name = flask.request.args.get('schema')
+        ttype_name = flask.request.args.get('ttype')
         session = appbuilder.get_session()
-        query = select(Task).order_by(text('created')).join(TaskType)
+        # todo: figure out n+1 / join load here
+        query = select(Task).order_by(text('created')).join(TaskType).join(SchemaVersion).join(TaskSchema)
         rows = [row for row, in session.execute(query)]
         return {
             'tasks': [row.jsonable() for row in rows],
             'types': {
-                str(row.ttype_id): row.ttype.jsonable()
+                str(row.ttype_id): {'schema_name': row.ttype.version.tschema.name, **row.ttype.jsonable()}
                 for row in rows
             },
         }

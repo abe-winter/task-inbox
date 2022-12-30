@@ -14,6 +14,7 @@ It allows you to:
 - define custom actions for tasks
   - i.e. actions that are not state changes, and may take arguments, possibly automatically from the task metadata, possibly hitting sites other than the sender
   - this matters because it increases the odds I can serve requests quickly on mobile; IMO mobile matters a lot for solopreneurs
+- allow mid-course inbound events -- for example, original poster can cancel the task, or a third party vendor can post information
 - render task attachments; use templates to control rendering of task types
 - process transparency
   - make some parts of tasks visible to end users (start with current status)

@@ -1,7 +1,8 @@
+import flask
 from flask import render_template
 from flask_appbuilder import BaseView, ModelView, ModelRestApi, MasterDetailView, expose
 from flask_appbuilder.models.sqla.interface import SQLAInterface
-from sqlalchemy import select
+from sqlalchemy import select, text
 from .main import appbuilder, db # yes circular but it's from their boilerplate
 from .models import Task, TaskType, SchemaVersion, TaskSchema, TaskHistory
 
@@ -51,13 +52,25 @@ class TasksRest(ModelRestApi):
             ]
         }
 
+    @expose('/<task_id>/state', methods=['PATCH'])
+    def patch_state(self, task_id):
+        state = flask.request.args['state']
+        session = appbuilder.get_session()
+        task = session.get(Task, task_id)
+        task.state = state or None # empty string nullifies
+        task.resolved = task.ttype.state_resolved(state, crash=True) if state else False
+        session.add(task)
+        session.add(TaskHistory.from_task(task))
+        session.commit()
+        return {'task': task.jsonable()}
+
     @expose('/')
     def get_list(self):
         # todo: use user's auth
         # todo: paging
         # todo: filter type, resolved, assigned
         session = appbuilder.get_session()
-        query = select(Task).join(TaskType)
+        query = select(Task).order_by(text('created')).join(TaskType)
         rows = [row for row, in session.execute(query)]
         return {
             'tasks': [row.jsonable() for row in rows],

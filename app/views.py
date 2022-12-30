@@ -1,6 +1,7 @@
 import flask
 from flask import render_template
 from flask_appbuilder import BaseView, ModelView, ModelRestApi, MasterDetailView, expose
+from flask_appbuilder.api import BaseApi, protect
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from sqlalchemy import select, text
 from .main import appbuilder, db # yes circular but it's from their boilerplate
@@ -18,28 +19,11 @@ class TasksListView(ModelView):
 
 appbuilder.add_view(TasksListView, 'Tasks')
 
-class TasksRest(ModelRestApi):
+class TasksRest(BaseApi):
     resource_name = 'tasks'
-    datamodel = SQLAInterface(Task)
-    allow_browser_login = True
-    # edit_exclude_columns = ['created', 'ttype']
-    # add_exclude_columns = ['created']
-    list_columns = ['ttype_id', 'state', 'user_id', 'resolved', 'created']
-    # todo: field permissions
-
-    @expose('/<task_id>')
-    def get(self, task_id):
-        # todo: include user info
-        session = appbuilder.get_session()
-        query = select(Task).filter_by(id=task_id).join(TaskType)
-        row, = session.execute(query).first()
-
-        return {
-            'task': task.jsonable(),
-            'type': task.ttype.jsonable(),
-        }
 
     @expose('/<task_id>/history')
+    @protect(allow_browser_login=True)
     def get_history(self, task_id):
         "get task history"
         # todo: page / limit history
@@ -53,6 +37,7 @@ class TasksRest(ModelRestApi):
         }
 
     @expose('/<task_id>/state', methods=['PATCH'])
+    @protect(allow_browser_login=True)
     def patch_state(self, task_id):
         # `or None` because empty string nullifies
         state = flask.request.args['state'] or None
@@ -67,8 +52,8 @@ class TasksRest(ModelRestApi):
         return {'task': task.jsonable()}
 
     @expose('/')
+    @protect(allow_browser_login=True)
     def get_list(self):
-        # todo: use user's auth
         # todo: paging
         # todo: filter type, resolved, assigned
         session = appbuilder.get_session()
@@ -85,7 +70,7 @@ class TasksRest(ModelRestApi):
 appbuilder.add_api(TasksRest)
 
 class TaskUi(BaseView):
-    @expose('/taskui')
+    @expose('')
     def list(self):
         # todo: auth / redirect
         return self.render_template('taskui.htm')

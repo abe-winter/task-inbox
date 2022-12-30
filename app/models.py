@@ -19,6 +19,7 @@ class Base(Model):
     created: datetime = Column(DateTime, default=func.now())
 
     def jsonable(self, include=None, exclude=()):
+        "return a dictionary of the instance's columns which can be converted to json"
         # todo: list version of this that dupes the work
         if include is None:
             include = list(self.__table__.columns.keys())

@@ -32,7 +32,7 @@ function StateBtn({ taskId, label, resolved, historyUrl }) {
 
 export function SingleTask({ task }) {
   if (task == null)
-    return <div className="alert alert-info">No task selected</div>;
+    return <></>;
   const historyUrl = `/api/v1/tasks/${task.id}/history`;
   const { data, error, isLoading } = useSWR(historyUrl, fetcher);
   // todo: merge meta blobs instead of showing first
@@ -53,20 +53,16 @@ export function SingleTask({ task }) {
         {task.type.pending_states.map(state => <StateBtn key={state} taskId={task.id} label={state} historyUrl={historyUrl} resolved={false} disabled={state == task.state} />)}
         {task.type.resolved_states.map(state => <StateBtn key={state} taskId={task.id} label={state} historyUrl={historyUrl} resolved={true} disabled={state == task.state} />)}
       </div>
+      {data?.history[0]?.update_meta != null && <>
+        <hr />
+        <table className="table"><tbody>
+          {Object.entries(data.history[0].update_meta).map(renderMetaRow)}
+        </tbody></table>
+      </>}
     </div></div>
     {isLoading ? <div>Loading history ...</div>
       : error ? <div className="alert alert-danger">{error.toString()}</div>
       : <div className="">
-        {data.history[0]?.update_meta != null && <div className="card mb-2"><div className="card-body">
-          <h5>Metadata</h5>
-          <table className="table"><tbody>
-            <tr>
-              <th>Field</th>
-              <th>Value</th>
-            </tr>
-            {Object.entries(data.history[0].update_meta).map(renderMetaRow)}
-          </tbody></table>
-        </div></div>}
         {data.history.slice(1).map((update, i) => <div key={update.id} className="card mb-2"><div className="card-body">
           state <b>{update.state || '(unset)'}</b>
           <div className="text-muted">{format(new Date(update.created), 'Pppp')}</div>

@@ -25,8 +25,8 @@ function StateBtn({ taskId, label, resolved, historyUrl }) {
       revalidate: false,
     });
   }
-  return <button className={`badge m-2 text-bg-${resolved ? 'success' : 'secondary'}`} onClick={setState}>
-    {resolved ? '✅ ' : ''}{label || '(unset)'}
+  return <button className={`badge m-2 text-bg-${label == '' ? 'light' : resolved ? 'success' : 'secondary'}`} onClick={setState}>
+    {resolved ? '✅ ' : ''}{label || 'unset'}
   </button>;
 }
 

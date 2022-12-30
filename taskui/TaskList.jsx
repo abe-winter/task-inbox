@@ -5,11 +5,13 @@ import { useStore } from './store';
 import { ErrorBoundary, fetcher } from './components.jsx';
 
 export function TaskListItem({ task, types }) {
-  const isSelected = task.id == useStore(state => state.task)?.id;
+  const selectedTaskId = useStore(state => state.task)?.id;
+  const isSelected = task.id == selectedTaskId;
+  const anySelected = selectedTaskId != null;
   const setTask = useStore(state => state.setTask);
   return <div
-    className="list-group-item"
-    onClick={() => setTask({ ...task, type: types[task.ttype_id] })}
+    className={`list-group-item ${!isSelected && anySelected ? 'd-none d-md-block' : ''}`}
+    onClick={() => isSelected ? setTask(null) : setTask({ ...task, type: types[task.ttype_id] })}
     style={{ background: isSelected ? '#ddd' : null }}
     >
     <span style={{ width: '1em', display: 'inline-block' }}>

@@ -54,14 +54,16 @@ class TasksRest(ModelRestApi):
 
     @expose('/<task_id>/state', methods=['PATCH'])
     def patch_state(self, task_id):
-        state = flask.request.args['state']
+        # `or None` because empty string nullifies
+        state = flask.request.args['state'] or None
         session = appbuilder.get_session()
         task = session.get(Task, task_id)
-        task.state = state or None # empty string nullifies
-        task.resolved = task.ttype.state_resolved(state, crash=True) if state else False
-        session.add(task)
-        session.add(TaskHistory.from_task(task))
-        session.commit()
+        if task.state != state:
+            task.state = state
+            task.resolved = task.ttype.state_resolved(state, crash=True) if state else False
+            session.add(task)
+            session.add(TaskHistory.from_task(task))
+            session.commit()
         return {'task': task.jsonable()}
 
     @expose('/')

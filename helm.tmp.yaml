@@ -1,6 +1,7 @@
 replicaCount: 1
 service_name: task-inbox
 full_tag: $taskinbox_tag
+git_version: $taskinbox_version
 
 migration:
   enabled: true

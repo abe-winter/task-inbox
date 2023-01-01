@@ -26,6 +26,8 @@ spec:
             value: '8000'
           - name: FLASK_APP
             value: app.main
+          - name: DOCKER_TAG
+            value: {{ .Values.git_version }}
           envFrom:
           - secretRef:
               name: task-inbox

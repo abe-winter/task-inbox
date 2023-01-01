@@ -50,7 +50,7 @@ def taskschema(session: 'sqlalchemy.orm.Session', path: str, dryrun: bool = Fals
         version=0,
         semver=schema.semver,
         default_hook_url=schema.default_hook_url,
-        hook_auth=schema.hook_auth,
+        hook_auth=schema.hook_auth and schema.hook_auth.dict(),
     )
     if not existing:
         logger.info('creating new schema + initial version')
@@ -147,7 +147,7 @@ def post_task(host='http://localhost:5000', schema_name='ti:sample', task_name='
 
 @COMMANDS
 def api_key(session: 'sqlalchemy.orm.Session', schema_name: str = None, name: str = None, keylen: int = 12):
-    "make an API key"
+    "make an inbound API key"
     import secrets
     from sqlalchemy import select
     from app.models import ApiKey, TaskSchema
@@ -158,6 +158,20 @@ def api_key(session: 'sqlalchemy.orm.Session', schema_name: str = None, name: st
     key = secrets.token_urlsafe(keylen)
     print('your new key is', key)
     session.add(ApiKey(key=key, tschema=task_schema, name=name))
+    session.commit()
+    logger.info('key created')
+
+@COMMANDS
+def webhook_key(session: 'sqlalchemy.orm.Session', schema_name: str, keylen: int = 12, key = None):
+    "make an outbound webhook key with hook_auth = latest version in schema. --key to optionally force key (otherwise generated)"
+    import secrets
+    from sqlalchemy import select
+    from app.models import WebhookKey, SchemaVersion
+    latest, = session.execute(SchemaVersion.latest(schema_name)).first()
+    logger.info('creating key for latest %s/%s with hook_auth %s', latest.version, latest.semver, latest.hook_auth)
+    key = key or secrets.token_urlsafe(keylen)
+    print('your key is', key)
+    session.add(WebhookKey(tschema=latest.tschema, hook_auth=latest.hook_auth, key=key))
     session.commit()
     logger.info('key created')
 

@@ -1,6 +1,10 @@
 # sample task schema
 name: 'ti:sample'
-semver: '0'
+semver: '1'
+default_hook_url: http://localhost:5001/api/v1/tihook
+hook_auth:
+  kind: head
+  val: ti-key
 tasktypes:
 - name: delete-acct
   resolved_states: ['deleted']

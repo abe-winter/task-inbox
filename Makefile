@@ -17,3 +17,7 @@ bin/git-bug:
 	wget https://github.com/MichaelMure/git-bug/releases/download/v0.8.0/git-bug_linux_amd64
 	mv git-bug_linux_amd64 $@
 	chmod +x $@
+
+receiver:
+	# run hook receiver
+	FLASK_DEBUG=1 FLASK_APP=receiver flask run -p 5001

@@ -11,6 +11,8 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID, BYTEA
 def make_jsonable(val):
     if isinstance(val, datetime):
         return val.isoformat()
+    elif isinstance(val, uuid.UUID):
+        return str(val)
     return val
 
 class Base(Model):
@@ -46,8 +48,9 @@ class ApiKey(Base):
 
 class WebhookKey(Base):
     "a key to use for outbound webhooks for a specific provider"
-    tschema_id: str = Column(ForeignKey('task_schema.id', ondelete='CASCADE'))
+    tschema_id: uuid.UUID = Column(ForeignKey('task_schema.id', ondelete='CASCADE'))
     tschema = relationship('TaskSchema')
+    hook_auth: dict = Column(JSONB) # this key is usable by any hook in the schema that has the same hook_auth
     key: str = Column(String)
     active: bool = Column(Boolean, default=True)
 
@@ -57,12 +60,12 @@ class WebhookKey(Base):
 
 class SchemaVersion(Base):
     "container for a specific version of an external app's task list"
-    tschema_id: str = Column(ForeignKey('task_schema.id', ondelete='CASCADE'))
+    tschema_id: uuid.UUID = Column(ForeignKey('task_schema.id', ondelete='CASCADE'))
     tschema = relationship('TaskSchema')
     version: int = Column(Integer) # internal version to track updates
     semver: str = Column(String) # external version string from provider
     default_hook_url: Optional[str] = Column(String, nullable=True)
-    hook_auth: Optional[str] = Column(String, nullable=True) # colon-sep string of [(header, query), item_name]. ex: header:apikey, query:key
+    hook_auth: Optional[dict] = Column(JSONB, nullable=True) # taskschema.HookAuth
 
     __table_args__ = (
         UniqueConstraint('tschema_id', 'version'),
@@ -84,7 +87,7 @@ class SchemaVersion(Base):
 class TaskType(Base):
     "within a SchemaVersion, a named task"
     version_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('schema_version.id', ondelete='CASCADE'))
-    version = relationship('SchemaVersion')
+    version: SchemaVersion = relationship('SchemaVersion')
     name: str = Column(String)
     pending_states: List[str] = Column(JSONB)
     resolved_states: List[str] = Column(JSONB)
@@ -109,7 +112,7 @@ class TaskType(Base):
 class Task(Base):
     "an instance of a TaskType"
     ttype_id: uuid.UUID = Column(UUID(as_uuid=True), ForeignKey('task_type.id', ondelete='CASCADE'))
-    ttype = relationship('TaskType')
+    ttype: TaskType = relationship('TaskType')
     state: Optional[str] = Column(String, nullable=True)
     user_id: Optional[int] = Column(Integer, ForeignKey('ab_user.id', ondelete='SET NULL'), nullable=True) # assigned user
     resolved: bool = Column(Boolean, default=False)

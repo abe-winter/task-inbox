@@ -9,9 +9,9 @@ pydantic = "*"
 flask-appbuilder = "*"
 psycopg2-binary = "*"
 alembic = "*"
+requests = "*"
 
 [dev-packages]
-requests = "*"
 
 [requires]
 python_version = "3.10"

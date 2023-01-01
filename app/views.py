@@ -8,6 +8,7 @@ from .main import appbuilder, db # yes circular but it's from their boilerplate
 from .models import Task, TaskType, SchemaVersion, TaskSchema, TaskHistory
 from .auth import apikey_auth
 from .messagetypes import PostTask
+from .webhooks import run_webhook
 
 # todo: get_session may be causing lock issues -- make sure I'm not supposed to be decorating
 
@@ -43,17 +44,23 @@ class TasksRest(BaseApi):
     @expose('/<task_id>/state', methods=['PATCH'])
     @protect(allow_browser_login=True)
     def patch_state(self, task_id):
-        # `or None` because empty string nullifies
+        # `or None` because we want empty string to set null
         state = flask.request.args['state'] or None
-        session = appbuilder.get_session()
+        session = self.appbuilder.get_session()
         task = session.get(Task, task_id)
-        if task.state != state:
-            task.state = state
-            task.editor_id = flask.g.user.id
-            task.resolved = task.ttype.state_resolved(state, crash=True) if state else False
-            session.add(task)
-            session.add(TaskHistory.from_task(task))
-            session.commit()
+        if task.state == state:
+            return {'task': task.jsonable()}
+        task.state = state
+        task.editor_id = flask.g.user.id
+        task.resolved = task.ttype.state_resolved(state, crash=True) if state else False
+        session.add(task)
+        session.add(TaskHistory.from_task(task))
+
+        # todo: I have no idea how to release session during the external API call. like none. switch frameworks
+        # note: this is here by design so that if external webhook fails, the state change doesn't write to db
+        run_webhook(session, task)
+
+        session.commit()
         return {'task': task.jsonable()}
 
     @expose('/')
@@ -89,6 +96,7 @@ class TasksRest(BaseApi):
         session = appbuilder.get_session()
         query = SchemaVersion.join_latest(body.schema_name, select(TaskType).filter_by(name=body.task))
         ttype, = session.execute(query).first() # todo: 404 on fail
+        # todo: include ip addr and which key posted it
         task = Task.make(session, ttype, body.state, body.meta)
         session.commit()
         return task.jsonable()

@@ -1,5 +1,6 @@
 import logging, os, flask
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_appbuilder import AppBuilder, SQLA
 
 logging.basicConfig(format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
@@ -7,6 +8,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 app = Flask(__name__)
 app.config.from_object("config")
+app.wsgi_app = ProxyFix(app.wsgi_app)
 db = SQLA(app)
 appbuilder = AppBuilder(app, db.session)
 

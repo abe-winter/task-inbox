@@ -1,6 +1,6 @@
 import create from 'zustand';
 
-export const baseTaskUrl = '/api/v1/tasks';
+export const baseTaskUrl = '/api/v1/tasks/';
 
 export const useStore = create((set) => ({
   task: null,

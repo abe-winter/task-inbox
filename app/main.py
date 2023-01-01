@@ -1,4 +1,4 @@
-import logging, os
+import logging, os, flask
 from flask import Flask
 from flask_appbuilder import AppBuilder, SQLA
 
@@ -13,6 +13,10 @@ appbuilder = AppBuilder(app, db.session)
 @app.get('/health')
 def get_health():
     return {
+        'client_ip': flask.request.remote_addr,
+        # these are to make sure flask isn't stripping https
+        'health_url': flask.url_for('get_health'),
+        'health_url_ext': flask.url_for('get_health', _external=True),
         'version': os.environ.get('DOCKER_TAG'),
     }
 

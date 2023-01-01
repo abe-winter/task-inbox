@@ -9,6 +9,7 @@ def apikey_auth_inner() -> ApiKey:
     session = appbuilder.get_session()
     if 'api-key' not in flask.request.headers:
         flask.abort(flask.Response("missing api-key header", status=401))
+    # todo: filter active here
     key = session.get(ApiKey, flask.request.headers['api-key'])
     if key is None:
         flask.abort(flask.Response("unknown or expired API key", status=403))

@@ -21,3 +21,23 @@ bin/git-bug:
 receiver:
 	# run hook receiver
 	FLASK_DEBUG=1 FLASK_APP=receiver flask run -p 5001
+
+kust-secrets.env: kust-secrets.tmp.env
+	cat $< | DB_IP=$(shell cd $$TF_DIR && terraform output -raw db_private_ip) envsubst > $@
+
+helm.yaml: helm.tmp.yaml tags.env
+	cat $< | envsubst > $@
+
+kustomize: kust-secrets.env secrets.env
+	kubectl apply -k .
+
+deploy-vars:
+	# print the vars you need for a deploy
+	# helm.tmp.yaml
+	@cat helm.tmp.yaml | xargs -n 1 envsubst -v
+	@echo
+	# kust-secrets.tmp.env
+	@cat kust-secrets.tmp.env | xargs -n 1 envsubst -v | grep -v DB_IP
+
+helm-upgrade: helm.yaml
+	helm upgrade --install -f $< task-inbox ./helm

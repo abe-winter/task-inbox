@@ -1,0 +1,23 @@
+{{- if .Values.migration.enabled -}}
+# todo: just include deployment.yaml maybe?
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.service_name }}-migrate
+  labels:
+    app: {{ .Values.service_name }}-migrate
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.full_tag }}"
+        command: [bash, -c, {{ .Values.migration.command }}]
+        envFrom:
+        - secretRef:
+            name: {{ .Values.service_name }}
+{{- end }}

@@ -4,7 +4,8 @@
   "description": "react frontend for task inbox",
   "main": "index.js",
   "scripts": {
-    "watch": "esbuild --watch taskui/index.jsx --bundle --outdir=app/static/js",
+    "watch": "esbuild --watch taskui/index.jsx --bundle --outdir=app/static/js --sourcemap",
+    "build": "esbuild taskui/index.jsx --bundle --outdir=app/static/js --minify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Abe Winter <awinter.public@gmail.com>",
@@ -17,6 +18,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "swr": "^2.0.0",
-    "zustand": "^4.1.5"
+    "zustand": "^4.2.0"
   }
 }

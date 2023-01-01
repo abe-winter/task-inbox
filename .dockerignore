@@ -1,11 +1,11 @@
 .direnv/
 __pycache__/
 bin/
-secrets.env
+*.env
 
 # fab gitignore
 *.pyc
-app.db
+*.db
 ./tmp
 ./build/*
 .idea
@@ -16,6 +16,8 @@ venv
 node_modules/
 
 app/static/js/
+
+.git/
 
 shabu.sqlite
 helm.yaml

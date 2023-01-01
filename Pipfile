@@ -10,8 +10,10 @@ flask-appbuilder = "*"
 psycopg2-binary = "*"
 alembic = "*"
 requests = "*"
+gunicorn = "*"
 
 [dev-packages]
+shabu = {git = "https://github.com/abe-winter/shabu.git"}
 
 [requires]
 python_version = "3.10"

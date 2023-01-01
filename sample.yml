@@ -1,7 +1,9 @@
 # sample task schema
 name: 'ti:sample'
 semver: '1'
+# this is the route on your application server that receives state updates from tasks in this schema
 default_hook_url: http://localhost:5001/api/v1/tihook
+# hook_auth is how task-inbox authorizes state updates to default_hook_url
 hook_auth:
   kind: head
   val: ti-key

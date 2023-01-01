@@ -1,0 +1,7 @@
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+- name: task-inbox
+  envs:
+  - kust-secrets.env

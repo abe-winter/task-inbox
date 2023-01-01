@@ -2,6 +2,14 @@
 
 Guide to things you'll do if you self-host this. There should be a table of contents for this in [README.md](./README.md).
 
+## Vocab
+
+Terms used probably consistently in this doc:
+
+<dl>
+  <dt>application server</dt> <dd>*your* server that interacts with task-inbox (or a third-party service that you use with t-i). more specifically, the service that posts tasks and receives webhooks on state changes</dd>
+</dl>
+
 ## Local tools setup
 
 Run `./tools.sh` for hints about which tools you're missing.
@@ -65,15 +73,22 @@ make run
 
 ## Inbound auth
 
-todo: how to set up api keys and use them in requests
+(todo expand)
+
+1. create a key with `./cli.py ...`
+1. this is controlled by the []() decorator. If you misconfigure, this will 501 / 401 / 403 depending on what is wrong
 
 ## Outbound auth
 
-todo: how to set up auth for when task-inbox hits a webhook on your external server
+(Remember, we have inbound API posts + outbound webhooks. This section is about **outbound** hooks, where a state change inside task-inbox sends an update to your application server).
 
-## Run helm
-
-todo
+1. Add a 'state update receiver' route to your application server like `post_tihook()` in [receiver.py](./receiver.py)
+1. Add `default_hook_url` and `hook_auth` to your schema yml file
+    - [sample.yml](./sample.yml) has a working example that works with receiver.py)
+    - There are more docs for these fields in sample.yml and [taskschema.py](./backend/taskschema.py)
+1. Generate a WebhookKey with `./cli.py webhook_key $SCHEMA_NAME`
+    - schema name is `ti:sample` in our test setup, for example
+    - This will generate a secret and print it in the terminal, but you can also specify an external secret with `--key`
 
 ## DB migrations
 
@@ -84,3 +99,19 @@ alembic revision --autogenerate -m "short description"
 # run migrations
 alembic upgrade head
 ```
+
+## Set up helm on kube
+
+1. I don't currently publish a docker image; you have to make one. I use [shabu](https://github.com/abe-winter/shabu) to do this internally, and the helm commands will work with the `tags.env` file from shabu.
+1. Set up a way to run commands with secrets in shell vars (gopass, for example)
+1. Set up the deploy secrets (`make deploy-vars` should list the vars you need)
+1. Set up access to your kube cluster (probably with a `$KUBECONFIG` var and maybe a tunnel)
+1. Run the kustomize + helm-upgrade commands (these are specific to my deploy for now; file a bug if you run into trouble)
+
+## openapi spec
+
+swagger / openapi spec for the external API
+
+(todo: fill this out)
+
+(todo: generate one in CI + link to it)

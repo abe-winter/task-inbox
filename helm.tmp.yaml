@@ -1,0 +1,12 @@
+replicaCount: 1
+service_name: task-inbox
+full_tag: $taskinbox_tag
+
+migration:
+  enabled: true
+  command: alembic upgrade head
+
+service:
+  enabled: true
+  type: NodePort
+  port: $taskinbox_nodeport

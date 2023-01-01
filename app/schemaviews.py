@@ -31,8 +31,9 @@ class SchemaVersionView(ModelView):
 
 appbuilder.add_view(SchemaVersionView, 'Schemas')
 
-def insert_schema(session: 'sqlalchemy.orm.Session', fileobj: 'io.IOWrapper'):
+def insert_schema(session: 'sqlalchemy.orm.Session', fileobj: 'io.IOWrapper', web_mode: bool = False):
     "helper to insert a yaml schema to db as new version"
+    # todo: in web_mode, make parse errors user-facing
     schema = TaskSchemaSchema.parse_obj(yaml.safe_load(fileobj))
     logger.info('parsed schema %s version %s with %d tasks', schema.name, schema.semver, len(schema.tasktypes))
     existing = session.execute(SchemaVersion.latest(schema.name)).first()
@@ -52,6 +53,8 @@ def insert_schema(session: 'sqlalchemy.orm.Session', fileobj: 'io.IOWrapper'):
         old_ver, = existing
         logger.info('%s has old version %d', schema.name, old_ver.version)
         if old_ver.semver == new_ver.semver:
+            if web_mode:
+                print('todo: uesr-facing error instead of 500')
             raise KeyError(old_ver.semver, 'semver would collide')
         new_ver.tschema_id = old_ver.tschema_id
         new_ver.version = old_ver.version + 1

@@ -10,6 +10,8 @@ def run_webhook(session: 'sqlalchemy.orm.Session', task: Task) -> Optional[reque
     if not version.default_hook_url:
         return None
     hook_auth = HookAuth.parse_obj(version.hook_auth)
+    # todo: filter active
+    # todo: select btwn multiple active keys, but preserve 501 behavior if 0 active
     key = session.query(WebhookKey) \
         .filter_by(tschema=version.tschema, hook_auth=version.hook_auth) \
         .order_by(text('created desc')) \
@@ -19,6 +21,7 @@ def run_webhook(session: 'sqlalchemy.orm.Session', task: Task) -> Optional[reque
     url = urllib.parse.urlparse(version.default_hook_url).geturl()
     # todo: let vendors ask for custom bodies
     body = {**task.jsonable(), 'ttype': task.ttype.name}
+    # todo: 502 and 503 here
     if hook_auth.kind == 'head':
         res = requests.post(url, json=body, headers={hook_auth.val: key.key})
     else:

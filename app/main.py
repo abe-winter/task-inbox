@@ -10,4 +10,4 @@ app.config.from_object("config")
 db = SQLA(app)
 appbuilder = AppBuilder(app, db.session)
 
-from . import views
+from . import views, schemaviews

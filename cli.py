@@ -38,42 +38,8 @@ def rmschema(session: 'sqlalchemy.orm.Session', name: str, dryrun: bool = False)
 @COMMANDS
 def taskschema(session: 'sqlalchemy.orm.Session', path: str, dryrun: bool = False):
     "set or upgrade a task schema from yaml file"
-    import yaml
-    from sqlalchemy import text, select
-    from backend.taskschema import TaskSchemaSchema
-    from app.models import TaskSchema, SchemaVersion, TaskType
-    blob = yaml.safe_load(open(path))
-    schema = TaskSchemaSchema.parse_obj(blob)
-    logger.info('parsed schema %s version %s with %d tasks', schema.name, schema.semver, len(schema.tasktypes))
-    existing = session.execute(SchemaVersion.latest(schema.name)).first()
-    new_ver = SchemaVersion(
-        version=0,
-        semver=schema.semver,
-        default_hook_url=schema.default_hook_url,
-        hook_auth=schema.hook_auth and schema.hook_auth.dict(),
-    )
-    if not existing:
-        logger.info('creating new schema + initial version')
-        row = TaskSchema(name=schema.name)
-        session.add(row)
-        new_ver.tschema = row
-        session.add(new_ver)
-    else:
-        old_ver, = existing
-        logger.info('%s has old version %d', schema.name, old_ver.version)
-        if old_ver.semver == new_ver.semver:
-            raise KeyError(old_ver.semver, 'semver would collide')
-        new_ver.tschema_id = old_ver.tschema_id
-        new_ver.version = old_ver.version + 1
-        session.add(new_ver)
-    for ttype in schema.tasktypes:
-        session.add(TaskType(
-            version=new_ver,
-            name=ttype.name,
-            pending_states=ttype.pending_states,
-            resolved_states=ttype.resolved_states,
-        ))
-    logger.info('inserted %d tasktypes', len(schema.tasktypes))
+    from app.schemaviews import insert_schema
+    insert_schema(session, open(path))
     if dryrun:
         raise DryRun
     session.commit()

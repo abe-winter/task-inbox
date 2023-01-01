@@ -36,6 +36,9 @@ class TaskSchema(Base):
     "container for a group of task types"
     name: str = Column(String, unique=True)
 
+    def __repr__(self):
+        return f'<TaskSchema {self.name}>'
+
 class ApiKey(Base):
     "a key which external providers use to call in"
     id = None
@@ -98,6 +101,9 @@ class TaskType(Base):
     __table_args__ = (
         UniqueConstraint('version_id', 'name'),
     )
+
+    def __repr__(self):
+        return f'<TaskType {self.name}>'
 
     def state_resolved(self, state: str, crash=False) -> Optional[bool]:
         "translate string state to bool resolved status. optionally crash if missing"

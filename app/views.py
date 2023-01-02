@@ -8,7 +8,7 @@ from .main import appbuilder, db # yes circular but it's from their boilerplate
 from .models import Task, TaskType, SchemaVersion, TaskSchema, TaskHistory
 from .auth import apikey_auth
 from .messagetypes import PostTask
-from .webhooks import run_webhook
+from .webhooks import run_webhook, send_webpush
 
 # todo: get_session may be causing lock issues -- make sure I'm not supposed to be decorating
 
@@ -99,6 +99,7 @@ class TasksRest(BaseApi):
         # todo: include ip addr and which key posted it
         task = Task.make(session, ttype, body.state, body.meta)
         session.commit()
+        send_webpush(session, self.appbuilder.app.config, task) # todo: move to background, retry
         return task.jsonable()
 
 appbuilder.add_api(TasksRest)

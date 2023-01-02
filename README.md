@@ -10,7 +10,7 @@ This *isn't* a project manager / jira clone sort of thing. It's for tasks that a
 - receive webhooks on your server when a task changes status
 - manage task schemas via yaml
 - web UX, mobile-friendly, installable PWA
-- web push on desktop + android for new tasks (but this isn't a reliable channel)
+- web push on desktop + android for new tasks (but see [reliability notes](./operations.md#web-push-deliverability))
 
 ## Screenshots
 
@@ -31,14 +31,13 @@ This *isn't* a project manager / jira clone sort of thing. It's for tasks that a
 
 ## Roadmap
 
-- render task attachments
-- define custom actions for tasks
-  - i.e. actions that are not state changes, and may take arguments, possibly automatically from the task metadata, possibly hitting sites other than the sender
-  - this matters because it increases the odds I can serve requests quickly on mobile; IMO mobile matters a lot for solopreneurs
-  - these can be presented as a menu (choose some) or a checklist (do all)
-- multi-party / advanced orchestration features
-  - mid-course inbound events -- for example, original poster can cancel the task, or a third party vendor can post information
-  - cc tasks and updates to third parties
+### immediate
+
+- render image URL in `__preview` fields
+- notifications: web push is not great. look into notification middlewares like apprise, like into alternate push hosts like gotify / UnifiedPush
+
+### medium term
+
 - process transparency
   - make some parts of tasks visible to end users (start with current status)
   - stats about resolution time, proportion of resolution statuses, and backlog
@@ -48,10 +47,24 @@ This *isn't* a project manager / jira clone sort of thing. It's for tasks that a
   - ETA hooks:
     - tell the system about features so it can generate explainable estimates ('tasks of this type normally take 1 hour, but it's the weekend and you have more than 2 items so expect 1-2 days')
     - register SLOs
-- end user manual actions to move the task forward, like answer a question in a form or grant a permission in a related app
-- assignments:
+- assignments
   - assign tasks to admins, plug in to on-call rotas
   - system for urgency levels (programmable based on various factors: SLA, deadline, user flag, customer type, ML)
+
+### long term
+
+- end user manual actions to move the task forward, like answer a question in a form or grant a permission in a related app
+- backend arch
+  - work queue
+  - SIEM + logging integration
+  - improve secret storage for ApiKey, WebhookKey, WebPushKey, i.e. dynamically added secrets
+- define custom actions for tasks
+  - i.e. actions that are not state changes, and may take arguments, possibly automatically from the task metadata, possibly hitting sites other than the sender
+  - this matters because it increases the odds I can serve requests quickly on mobile; IMO mobile matters a lot for solopreneurs
+  - these can be presented as a menu (choose some) or a checklist (do all)
+- multi-party / advanced orchestration features
+  - mid-course inbound events -- for example, original poster can cancel the task, or a third party vendor can post information
+  - cc tasks and updates to third parties
 
 ## Alternatives
 

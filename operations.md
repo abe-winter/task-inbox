@@ -136,3 +136,14 @@ Task metadata is ... . It is set when ...
 1. Create a `webpushkeys/claims.json`
   - [example here](https://github.com/web-push-libs/vapid/blob/main/python/claims.json)), but only use sub
   - leave out 'aud' and 'exp' keys. aud is set per-request and I think setting exp in claims.json will prevent our library from setting a correct exp
+
+## web push deliverability
+
+Deliverability of web push has not been great. I think your laptop has to be awake with the browser running to get these (at least on linux; maybe it's better on macos).
+
+On my android device, I turned off background optimization for chrome. (Long press -> info -> battery -> top radio button). This *seems* to make things better. My test case is swipe-quit, wait a few minutes, send a push.
+
+- I'm not sure what happens if the device is restarted and the browser
+- But I'm not sure what happens on mobile if these are sent while offline for a long time
+
+In general this isn't a reliable channel. See roadmap item on notifications.

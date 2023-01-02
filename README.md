@@ -1,12 +1,20 @@
 # task-inbox
 
-This is a 'shared task inbox' for small teams. It lets you post tasks via API and triggers webhooks when you resolve them or otherwise change their state. It previews attachments for the tasks. You'd think this would be easy to find on the market / existing OSS.
+This is a 'shared task inbox' / 'approvals inbox' for small teams. It lets you post tasks via API and triggers webhooks when you resolve them. It previews attachments for the tasks.
+
+This *isn't* a project manager / jira clone sort of thing. It's for tasks that are triggered by a customer action, and then require fairly boring resolution by the product owner.
 
 ## Working features
 
 - create tasks programmatically via API
-- web UX that works on mobile
 - receive webhooks on your server when a task changes status
+- manage task schemas via yaml
+- web UX, mobile-friendly, installable PWA
+- web push on desktop + android for new tasks (but this isn't a reliable channel)
+
+## Screenshots
+
+(todo)
 
 ## Operations
 
@@ -23,14 +31,14 @@ This is a 'shared task inbox' for small teams. It lets you post tasks via API an
 
 ## Roadmap
 
-- web push
-  - the [spec](https://datatracker.ietf.org/doc/html/rfc8030#section-8.1) requires e2e encryption -- we don't do that yet
+- render task attachments
 - define custom actions for tasks
   - i.e. actions that are not state changes, and may take arguments, possibly automatically from the task metadata, possibly hitting sites other than the sender
   - this matters because it increases the odds I can serve requests quickly on mobile; IMO mobile matters a lot for solopreneurs
   - these can be presented as a menu (choose some) or a checklist (do all)
-- allow mid-course inbound events -- for example, original poster can cancel the task, or a third party vendor can post information
-- render task attachments; use templates to control rendering of task types
+- multi-party / advanced orchestration features
+  - mid-course inbound events -- for example, original poster can cancel the task, or a third party vendor can post information
+  - cc tasks and updates to third parties
 - process transparency
   - make some parts of tasks visible to end users (start with current status)
   - stats about resolution time, proportion of resolution statuses, and backlog
@@ -43,14 +51,11 @@ This is a 'shared task inbox' for small teams. It lets you post tasks via API an
 - end user manual actions to move the task forward, like answer a question in a form or grant a permission in a related app
 - assignments:
   - assign tasks to admins, plug in to on-call rotas
-  - mobile notification strategy
   - system for urgency levels (programmable based on various factors: SLA, deadline, user flag, customer type, ML)
-
-This *isn't* a project manager / jira clone sort of thing. It's for tasks that are triggered by a customer action and require fairly boring resolution by the product owner.
 
 ## Alternatives
 
-I built it because everything I work on has user-triggered customer service actions, and I was shelling into my prod server to do these. 'Task inbox' feels like a product that is easy to ruin with saas moats and plan levels, but is a natural fit for OSS because of the benefits of standardization.
+I built this because my projects have user-triggered customer service actions, and I was shelling into my prod server to do these. 'Task inbox' feels like a product that is easy to ruin with saas moats and plan levels, but is a natural fit for OSS because of the benefits of standardization.
 
 I shopped around a lot before building this. Without naming names:
 

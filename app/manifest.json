@@ -1,0 +1,16 @@
+{
+  "short_name": "task-inbox",
+  "name": "task-inbox",
+  "description": "webhook-friendly, notification-sending inbox for semi-manual tasks",
+  "icons": [{
+    "src": "/static/inbox-emoji.png",
+    "type": "image/png",
+    "sizes": "160x160"
+  }],
+  "id": "/taskui",
+  "start_url": "/taskui",
+  "display": "standalone",
+  "scope": "/",
+  "shortcuts": [],
+  "screenshots": []
+}

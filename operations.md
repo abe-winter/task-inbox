@@ -107,6 +107,9 @@ alembic upgrade head
 1. Set up the deploy secrets (`make deploy-vars` should list the vars you need)
 1. Set up access to your kube cluster (probably with a `$KUBECONFIG` var and maybe a tunnel)
 1. Run the kustomize + helm-upgrade commands (these are specific to my deploy for now; file a bug if you run into trouble)
+1. set up ssl termination / load balancer forwarding to your nodeport (todo support ingress too)
+1. hit `curl $HOST/health` on the deployed server to make sure url_for is setting up https correctly (i.e. werkzeug proxy detection works)
+1. shell in to the running server to set up an admin user with `flask fab create-admin`, then log in to the web interface and
 
 ## openapi spec
 
@@ -115,3 +118,12 @@ swagger / openapi spec for the external API
 (todo: fill this out)
 
 (todo: generate one in CI + link to it)
+
+## task metadata
+
+Task metadata is ... . It is set when ...
+
+- previews: `__preview` suffix? todo: find this and link to code
+- todo: suffix that means 'included in state update webhooks'
+- todo: suffix that makes meta keys editable
+- todo: multiple attrs in suffix

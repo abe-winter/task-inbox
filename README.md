@@ -75,7 +75,7 @@ I shopped around a lot before building this. Without naming names:
 - Some tools are good at tasks with a single resolution action, but aren't designed for long-lived tasks with multiple updates over their lifetime
 - Many commercial tools make it difficult or require 'enterprise' to hook task updates to my API
 - Most tools don't allow custom content (but a few do this w/ js APIs, and at least one in the form of 'iframe plugins')
-- Chatops is generally good at this, but 1) hard to get a list of everything not my bag
+- Chatops is generally good at this, but 1) hard to get a list of everything outstanding, and 2) requires you to give data + creds to the main chat provider, and 3) my team doesn't use chat
 - Helpdesk / ticketing tools are in theory perfect for this
   - But are very expensive ($10+ per seat), and *much more* expensive if you want to do any customization
   - The OSS ones seem to be on a 'paid app store' model and / or not support API inserts (todo: recheck this)
@@ -83,9 +83,10 @@ I shopped around a lot before building this. Without naming names:
 - A shared-source workflow tool that looks amazing but is not designed to wait for user input after a task has started
 - An 'approval inbox' tool that looks great but only accepts form triggers, not API
 - A generally nice todo list tool but their TOS banned objectionable content. One of my use cases is disputes and content flags
-- Moderation tools sort are expensive, AI-heavy (= unclear privacy), not designed for one-person teams, and I'm not sure they support other kinds of service tasks
-- A shared team email tool that claimed to support tasks in their API but did not
+- Moderation tools are expensive, AI-heavy (= unclear privacy), not designed for one-person teams, and I'm not sure they support other kinds of service tasks
+- A shared team email tool that claimed to support API task creation but did not
 
 ## Bugs
 
-Are tracked using [git-bug](https://github.com/MichaelMure/git-bug) for now.
+- File bugs / etc on github.
+- I in theory have a [git-bug](https://github.com/MichaelMure/git-bug) for work planning; not sure if this syncs

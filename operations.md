@@ -134,5 +134,5 @@ Task metadata is ... . It is set when ...
 1. Run make `webpushkeys`
   - todo: doc key rotation process
 1. Create a `webpushkeys/claims.json`
-  - [example here](https://github.com/web-push-libs/vapid/blob/main/python/claims.json))
-  - Leave the `exp` key out, but also todo: how is this set? does this need to be signed per-request?
+  - [example here](https://github.com/web-push-libs/vapid/blob/main/python/claims.json)), but only use sub
+  - leave out 'aud' and 'exp' keys. aud is set per-request and I think setting exp in claims.json will prevent our library from setting a correct exp

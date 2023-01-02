@@ -24,17 +24,27 @@ self.addEventListener('push', event => {
     tag: body.tag, // for merging by type I think
     renotify: !!body.tag, // so merged msgs still ping. error if tag is null, hence !!
     requireInteraction: true, // i.e. don't auto-vanish
+    badge: '/static/inbox-emoji.png',
+    icon: '/static/inbox-emoji.png',
   }));
 });
 
 addEventListener('notificationclick', event => {
-  console.log('click', event);
+  console.log('notification click', event);
   event.notification.close();
   event.waitUntil(async () => {
-    for (const client of await clients.matchAll({ type: 'window' })) {
+    const matched = await clients.matchAll({ type: 'window' });
+    console.log('iterating matched', matched);
+    for (const client of matched) {
       console.log('client', client);
       if ('focus' in client) return client.focus();
     }
-    if (clients.openWindow) return clients.openWindow('/');
+    if (clients.openWindow) {
+      console.log('trying openWindow');
+      const windowClient = await clients.openWindow('/taskui');
+      if (windowClient) windowClient.focus();
+    } else {
+      console.warn("notification click didn't find anything to activate");
+    }
   });
 });

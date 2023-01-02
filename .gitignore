@@ -22,6 +22,3 @@ helm.yaml
 kust-secrets.env
 tags.env*
 shabu.json
-webpushkeys/*.pem
-webpushkeys/*.b64
-webpushkeys/claims.json

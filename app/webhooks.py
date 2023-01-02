@@ -33,8 +33,37 @@ def run_webhook(session: 'sqlalchemy.orm.Session', task: Task) -> Optional[reque
     # todo: anything we want to log or capture back about webhook? (maybe log which URL hit, which key, status code at least)
     return res
 
-def send_webpush(session: 'sqlalchemy.orm.Session', config, task: Task):
-    "send a webpush to every user on the server (ugh preferences pls) when a task is created"
+def send_push_key(claims: dict, pem_path: str, key: WebhookKey, body: str, outcomes: Optional[collections.Counter] = None, cleanup: list = None) -> Optional[Exception]:
+    "do push to individual key, clean up key if necessary"
+    url = urllib.parse.urlparse(key.subscription_blob['endpoint'])
+    err_outer = None
+    try:
+        # todo: urgency=high header maybe https://web.dev/push-notifications-web-push-protocol/#urgency
+        pywebpush.webpush(
+            key.subscription_blob,
+            body,
+            vapid_private_key=pem_path,
+            vapid_claims={**claims, 'aud': f'{url.scheme}://{url.netloc}'},
+        )
+        outcomes['success'] += 1
+    except pywebpush.WebPushException as err:
+        if err.response.status_code == 410:
+            if cleanup is not None:
+                cleanup.append(key)
+        else:
+            logger.exception('unk WebPushException status %s', err.response and err.response.status_code)
+        err_outer = err
+    except Exception as err:
+        err_outer = err
+    if err_outer:
+        outcomes['fail'] += 1
+        outcomes[type(err_outer)] += 1
+    return err_outer
+
+def send_webpush(session: 'sqlalchemy.orm.Session', config, task: Task) -> collections.Counter:
+    """Send a webpush to every user on the server (ugh preferences pls) when a task is created.
+    Caller should session.commit() afterwards to handle deleted tokens.
+    """
     # todo: background task pls with per-service retry semantics maybe
     rows = session.execute(select(WebPushKey)).all()
     logger.info('sending push to %d sessions', len(rows))
@@ -43,20 +72,15 @@ def send_webpush(session: 'sqlalchemy.orm.Session', config, task: Task):
         if os.path.isabs((raw_vapid := config['VAPID_PATH'])) \
         else os.path.join(os.path.dirname(__file__), raw_vapid)
     claims = json.load(open(os.path.join(vapid_path, 'claims.json')))
-    message = f'new {task.ttype.name}'
+    pem_path = os.path.join(vapid_path, 'private_key.pem')
+    body = json.dumps({'msg': f'new {task.ttype.name}', 'tag': task.ttype.name})
     outcomes = collections.Counter()
+    cleanup = []
     for key, in rows:
-        url = urllib.parse.urlparse(key.subscription_blob['endpoint'])
-        try:
-            pywebpush.webpush(
-                key.subscription_blob,
-                json.dumps({'msg': message, 'tag': task.ttype.name}),
-                vapid_private_key=os.path.join(vapid_path, 'private_key.pem'),
-                vapid_claims={**claims, 'aud': f'{url.scheme}://{url.netloc}'},
-            )
-            outcomes['success'] += 1
-        except Exception as err:
-            outcomes['fail'] += 1
-            outcomes[type(err)] += 1
+        send_push_key(claims, pem_path, key, body, outcomes, cleanup)
     logger.info('push outcomes %s', outcomes)
+    if cleanup:
+        logger.info('deleting %d stale keys', len(cleanup))
+        for key in cleanup:
+            session.delete(key)
     return outcomes

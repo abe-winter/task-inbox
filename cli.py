@@ -142,28 +142,29 @@ def webhook_key(session: 'sqlalchemy.orm.Session', schema_name: str, keylen: int
     logger.info('key created')
 
 @COMMANDS
-def webpush(session: 'sqlalchemy.orm.Session', user_id: int, message: str, vapid_path: str = './webpushkeys'):
+def webpush(session: 'sqlalchemy.orm.Session', user_id: int, message: str, vapid_path: str = None):
     "look up all this user's web push keys and send"
-    import urllib.parse
-    import pywebpush
+    import collections
     from sqlalchemy import select
     from app.models import WebPushKey
+    from app.webhooks import send_push_key
+    vapid_path = vapid_path or os.environ.get('VAPID_PATH', './webpushkeys')
+    logger.info('using vapid_path %s', vapid_path)
     rows = session.execute(select(WebPushKey).filter_by(user_id=user_id)).all()
     logger.info('found keys for %d sessions', len(rows))
     claims = json.load(open(os.path.join(vapid_path, 'claims.json')))
+    pem_path = os.path.join(vapid_path, 'private_key.pem')
+    body = json.dumps({'msg': message})
+    outcomes = collections.Counter()
+    cleanup = []
     for key, in rows:
-        try:
-            url = urllib.parse.urlparse(key.subscription_blob['endpoint'])
-            pywebpush.webpush(
-                key.subscription_blob,
-                json.dumps({'msg': message}),
-                vapid_private_key=os.path.join(vapid_path, 'private_key.pem'),
-                vapid_claims={**claims, 'aud': f'{url.scheme}://{url.netloc}'},
-            )
-            logger.info('ok sesh %s', key.session_id)
-        except Exception as err:
-            print('skipping err', err)
-    logger.info('ok all')
+        send_push_key(claims, pem_path, key, body, outcomes, cleanup)
+    logger.info('outcomes %s', outcomes)
+    if cleanup:
+        logger.info('deleting %d stale keys', len(cleanup))
+        for key in cleanup:
+            session.delete(key)
+        session.commit()
 
 @COMMANDS
 def webpush_clear(session: 'sqlalchemy.orm.Session'):

@@ -1,0 +1,3 @@
+*.pem
+*.b64
+claims.json

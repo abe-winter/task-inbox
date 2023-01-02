@@ -5,3 +5,9 @@ secretGenerator:
 - name: task-inbox
   envs:
   - kust-secrets.env
+- name: ti-push
+  files:
+  - ./webpushkeys/private_key.pem
+  - ./webpushkeys/public_key.pem
+  - ./webpushkeys/claims.json
+  - ./webpushkeys/applicationServerKey.b64

@@ -23,9 +23,12 @@ This is a 'shared task inbox' for small teams. It lets you post tasks via API an
 
 ## Roadmap
 
+- web push
+  - the [spec](https://datatracker.ietf.org/doc/html/rfc8030#section-8.1) requires e2e encryption -- we don't do that yet
 - define custom actions for tasks
   - i.e. actions that are not state changes, and may take arguments, possibly automatically from the task metadata, possibly hitting sites other than the sender
   - this matters because it increases the odds I can serve requests quickly on mobile; IMO mobile matters a lot for solopreneurs
+  - these can be presented as a menu (choose some) or a checklist (do all)
 - allow mid-course inbound events -- for example, original poster can cancel the task, or a third party vendor can post information
 - render task attachments; use templates to control rendering of task types
 - process transparency

@@ -19,21 +19,31 @@ spec:
         app: {{ .Values.service_name }}-api
     spec:
       containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.full_tag }}"
-          env:
-          - name: PORT
-            value: '8000'
-          - name: FLASK_APP
-            value: app.main
-          - name: DOCKER_TAG
-            value: {{ .Values.git_version }}
-          envFrom:
-          - secretRef:
-              name: task-inbox
-          ports:
-          - name: http
-            containerPort: 8000
-            protocol: TCP
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.full_tag }}"
+        env:
+        - name: PORT
+          value: '8000'
+        - name: FLASK_APP
+          value: app.main
+        - name: DOCKER_TAG
+          value: {{ .Values.git_version }}
+        - name: VAPID_PATH
+          value: /var/run/secrets
+        envFrom:
+        - secretRef:
+            name: task-inbox
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+        - name: ti-push
+          mountPath: /var/run/secrets
+          readOnly: true
+      volumes:
+      - name: ti-push
+        secret:
+          secretName: ti-push

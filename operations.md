@@ -107,6 +107,7 @@ alembic upgrade head
 1. Set up the deploy secrets (`make deploy-vars` should list the vars you need)
 1. Set up access to your kube cluster (probably with a `$KUBECONFIG` var and maybe a tunnel)
 1. Run the kustomize + helm-upgrade commands (these are specific to my deploy for now; file a bug if you run into trouble)
+    - `make empty-push-keys` if `make kustomize` fails
 1. set up ssl termination / load balancer forwarding to your nodeport (todo support ingress too)
 1. hit `curl $HOST/health` on the deployed server to make sure url_for is setting up https correctly (i.e. werkzeug proxy detection works)
 1. shell in to the running server to set up an admin user with `flask fab create-admin`, then log in to the web interface and
@@ -127,3 +128,9 @@ Task metadata is ... . It is set when ...
 - todo: suffix that means 'included in state update webhooks'
 - todo: suffix that makes meta keys editable
 - todo: multiple attrs in suffix
+
+## set up web push
+
+1. Run make `webpushkeys`
+  - todo: doc key rotation process
+1. Create a `webpushkeys/claims.json` ([example here](https://github.com/web-push-libs/vapid/blob/main/python/claims.json)). don't worry about `exp` key, we add it per-event at runtime

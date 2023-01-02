@@ -41,3 +41,10 @@ deploy-vars:
 
 helm-upgrade: helm.yaml
 	helm upgrade --install -f $< task-inbox ./helm
+
+.PHONY: webpushkeys
+webpushkeys:
+	# note: you have to also manually add a claims.json in this dir or `make kustomize` will fail
+	mkdir -p $@
+	# note: vapid will create keys if missing, check them otherwise (I think)
+	cd $@ && vapid && vapid --applicationServerKey | awk '{print $$5}' | sed '/^$$/d' > applicationServerKey.b64

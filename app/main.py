@@ -1,4 +1,5 @@
-import logging, os, flask
+import logging, os, base64
+import flask
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_appbuilder import AppBuilder, SQLA
@@ -37,6 +38,18 @@ def get_manifest():
 @app.get('/sw.js')
 def get_service_worker():
     return flask.send_file('sw.js')
+
+@app.get('/.vapid-pk')
+def get_vapid_public_key():
+    enc = flask.request.args.get('enc')
+    pem_path = os.path.join(app.config['VAPID_PATH'], 'applicationServerKey.b64')
+    return flask.send_file(pem_path, mimetype='application/base64')
+
+@app.post('/push/register')
+def post_push_register():
+    "register for web push"
+    print('json body', flask.request.json)
+    raise NotImplementedError()
 
 # sigh, circular import from boilerplate
 from . import views, schemaviews

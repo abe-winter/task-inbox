@@ -144,23 +144,36 @@ def webhook_key(session: 'sqlalchemy.orm.Session', schema_name: str, keylen: int
 @COMMANDS
 def webpush(session: 'sqlalchemy.orm.Session', user_id: int, message: str, vapid_path: str = './webpushkeys'):
     "look up all this user's web push keys and send"
+    import urllib.parse
     import pywebpush
     from sqlalchemy import select
     from app.models import WebPushKey
     rows = session.execute(select(WebPushKey).filter_by(user_id=user_id)).all()
     logger.info('found keys for %d sessions', len(rows))
+    claims = json.load(open(os.path.join(vapid_path, 'claims.json')))
     for key, in rows:
         try:
+            url = urllib.parse.urlparse(key.subscription_blob['endpoint'])
             pywebpush.webpush(
                 key.subscription_blob,
                 json.dumps({'msg': message}),
                 vapid_private_key=os.path.join(vapid_path, 'private_key.pem'),
-                vapid_claims=json.load(open(os.path.join(vapid_path, 'claims.json'))),
+                vapid_claims={**claims, 'aud': f'{url.scheme}://{url.netloc}'},
             )
             logger.info('ok sesh %s', key.session_id)
         except Exception as err:
             print('skipping err', err)
     logger.info('ok all')
+
+@COMMANDS
+def webpush_clear(session: 'sqlalchemy.orm.Session'):
+    "delete all webpush tokens on the server"
+    if 'y' != input('this will drop everything. are you sure? (y): '): return
+    from sqlalchemy import delete
+    from app.models import WebPushKey
+    res = session.execute(delete(WebPushKey))
+    print('result', res)
+    session.commit()
 
 if __name__ == '__main__':
     COMMANDS.main()

@@ -16,3 +16,8 @@ self.addEventListener('fetch', event => {
 self.addEventListener('pushsubscriptionchange', event => {
   console.warn('todo: handle pushsubscriptionchange');
 });
+
+self.addEventListener('push', event => {
+  const body = event.data.json();
+  event.waitUntil(self.registration.showNotification('task-inbox', { body: body.msg }));
+});

@@ -1,8 +1,11 @@
-import logging, os, base64
+import logging, os, base64, binascii
+from datetime import datetime
 import flask
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_appbuilder import AppBuilder, SQLA
+from flask_appbuilder.api import protect
+from .models import WebPushKey
 
 logging.basicConfig(format="%(asctime)s:%(levelname)s:%(name)s:%(message)s")
 logging.getLogger().setLevel(logging.INFO)
@@ -29,6 +32,7 @@ class IntentionalError(Exception):
 
 @app.get('/crash')
 def get_crash():
+    print(flask.session)
     raise IntentionalError
 
 @app.get('/manifest.json')
@@ -48,8 +52,24 @@ def get_vapid_public_key():
 @app.post('/push/register')
 def post_push_register():
     "register for web push"
-    print('json body', flask.request.json)
-    raise NotImplementedError()
+    session_id = base64.b64encode(binascii.unhexlify(flask.session['_id'])).decode()
+    session = appbuilder.get_session
+    existing = session.get(WebPushKey, session_id)
+    if existing:
+        if existing.user_id != flask.g.user.id:
+            # todo: siem log
+            flask.abort(Response("user ID for session seems to have changed", status=400))
+        existing.subscription_blob = flask.request.json['sub']
+        existing.updated = datetime.now()
+        # session.add(existing)
+    else:
+        session.add(WebPushKey(
+            session_id=session_id,
+            user_id=flask.g.user.id,
+            subscription_blob=flask.request.json['sub'],
+        ))
+    session.commit()
+    return 'ok'
 
 # sigh, circular import from boilerplate
 from . import views, schemaviews

@@ -156,3 +156,14 @@ class TaskHistory(Base):
             assigned_id=task.user_id,
             update_meta=meta_diff,
         )
+
+class WebPushKey(Base):
+    "store subscription blobs returned by browser"
+    id = None # don't generate an ID
+    session_id = Column(String, primary_key=True) # flask session ID, probably converted from hex to base64
+    # note: user_id isn't unique; a user can be logged in to multiple sessions (i.e. desktop / mobile), but only the latest key per session matters
+    user_id: int = Column(Integer, ForeignKey('ab_user.id', ondelete='CASCADE'))
+    user: User = relationship('User')
+    # this is the PushSubscription returned by subscribe() in the browser https://developer.mozilla.org/en-US/docs/Web/API/PushSubscription
+    subscription_blob = Column(JSONB)
+    updated: datetime = Column(DateTime, default=func.now())

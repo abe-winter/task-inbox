@@ -12,3 +12,7 @@ self.addEventListener('fetch', event => {
     return response || fetch(event.request);
   });
 });
+
+self.addEventListener('pushsubscriptionchange', event => {
+  console.warn('todo: handle pushsubscriptionchange');
+});

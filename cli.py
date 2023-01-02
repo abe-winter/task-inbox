@@ -141,5 +141,26 @@ def webhook_key(session: 'sqlalchemy.orm.Session', schema_name: str, keylen: int
     session.commit()
     logger.info('key created')
 
+@COMMANDS
+def webpush(session: 'sqlalchemy.orm.Session', user_id: int, message: str, vapid_path: str = './webpushkeys'):
+    "look up all this user's web push keys and send"
+    import pywebpush
+    from sqlalchemy import select
+    from app.models import WebPushKey
+    rows = session.execute(select(WebPushKey).filter_by(user_id=user_id)).all()
+    logger.info('found keys for %d sessions', len(rows))
+    for key, in rows:
+        try:
+            pywebpush.webpush(
+                key.subscription_blob,
+                json.dumps({'msg': message}),
+                vapid_private_key=os.path.join(vapid_path, 'private_key.pem'),
+                vapid_claims=json.load(open(os.path.join(vapid_path, 'claims.json'))),
+            )
+            logger.info('ok sesh %s', key.session_id)
+        except Exception as err:
+            print('skipping err', err)
+    logger.info('ok all')
+
 if __name__ == '__main__':
     COMMANDS.main()

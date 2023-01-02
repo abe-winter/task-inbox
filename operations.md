@@ -133,4 +133,6 @@ Task metadata is ... . It is set when ...
 
 1. Run make `webpushkeys`
   - todo: doc key rotation process
-1. Create a `webpushkeys/claims.json` ([example here](https://github.com/web-push-libs/vapid/blob/main/python/claims.json)). don't worry about `exp` key, we add it per-event at runtime
+1. Create a `webpushkeys/claims.json`
+  - [example here](https://github.com/web-push-libs/vapid/blob/main/python/claims.json))
+  - Leave the `exp` key out, but also todo: how is this set? does this need to be signed per-request?

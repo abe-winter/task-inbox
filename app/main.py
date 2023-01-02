@@ -46,6 +46,7 @@ def get_service_worker():
 @app.get('/.vapid-pk')
 def get_vapid_public_key():
     enc = flask.request.args.get('enc')
+    # todo: does this need to be signed per-request so expiration is non-null?
     pem_path = os.path.join(app.config['VAPID_PATH'], 'applicationServerKey.b64')
     return flask.send_file(pem_path, mimetype='application/base64')
 

@@ -9,7 +9,7 @@
   }],
   "id": "/taskui",
   "start_url": "/taskui",
-  "display": "standalone",
+  "display": "minimal-ui",
   "scope": "/",
   "shortcuts": [],
   "screenshots": []

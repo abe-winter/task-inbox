@@ -16,6 +16,11 @@ app.wsgi_app = ProxyFix(app.wsgi_app)
 db = SQLA(app)
 appbuilder = AppBuilder(app, db.session)
 
+@app.before_request
+def make_session_permanent():
+    # sigh -- is there really no configurable way to preserve logins across browser restart. ugh
+    flask.session.permanent = True
+
 @app.get('/health')
 def get_health():
     return {

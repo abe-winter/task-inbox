@@ -1,4 +1,5 @@
 import os
+import flask
 from flask_appbuilder.security.manager import (
     # AUTH_OID,
     # AUTH_REMOTE_USER,
@@ -15,8 +16,11 @@ SECRET_KEY = os.environ['SECRET_KEY']
 # The SQLAlchemy connection string.
 SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_URL']
 
-# todo: ugh support =0 or get flask's own debug var from somewhere
-FAB_API_SWAGGER_UI = bool(os.environ.get('FLASK_DEBUG'))
+# only show openapi UX in debug mode
+FAB_API_SWAGGER_UI = flask.helpers.get_debug_flag()
+# require https for cookies except in debug mode
+SESSION_COOKIE_SECURE = not flask.helpers.get_debug_flag()
+VAPID_PATH = os.environ.get('VAPID_PATH', '../webpushkeys')
 
 # Flask-WTF flag for CSRF
 CSRF_ENABLED = True
@@ -83,15 +87,17 @@ LANGUAGES = {
 # Image and file configuration
 # ---------------------------------------------------
 # The file upload folder, when using models with files
-UPLOAD_FOLDER = basedir + "/app/static/uploads/"
+# UPLOAD_FOLDER = basedir + "/app/static/uploads/"
 
 # The image upload folder, when using models with images
-IMG_UPLOAD_FOLDER = basedir + "/app/static/uploads/"
+# IMG_UPLOAD_FOLDER = basedir + "/app/static/uploads/"
 
 # The image upload url, when using models with images
-IMG_UPLOAD_URL = "/static/uploads/"
+# IMG_UPLOAD_URL = "/static/uploads/"
 # Setup image size default is (300, 200, True)
 # IMG_SIZE = (300, 200, True)
+
+APP_NAME = 'task-inbox'
 
 # Theme configuration
 # these are located on static/appbuilder/css/themes

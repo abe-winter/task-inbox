@@ -39,6 +39,8 @@ make bin/git-bug
 flask fab create-admin
 ```
 
+Once you have an admin user, you can use the flask-appbuilder web interface to make more users.
+
 ## Task schema
 
 To receive API task submissions, set up a task schema with yaml. There's a sample schema in this repo at [sample.yml](./sample.yml), and the task schema's schema is in pydantic in [taskschema.py](./backend/taskschema.py).
@@ -132,10 +134,10 @@ Task metadata is ... . It is set when ...
 ## set up web push
 
 1. Run make `webpushkeys`
-  - todo: doc key rotation process
+    - todo: doc key rotation process
 1. Create a `webpushkeys/claims.json`
-  - [example here](https://github.com/web-push-libs/vapid/blob/main/python/claims.json)), but only use sub
-  - leave out 'aud' and 'exp' keys. aud is set per-request and I think setting exp in claims.json will prevent our library from setting a correct exp
+    - [example here](https://github.com/web-push-libs/vapid/blob/main/python/claims.json), but only provide `sub` key
+    - leave out 'aud' and 'exp' keys. aud is set per-request, and I think setting exp in claims.json will prevent our library from setting a correct exp
 
 ## web push deliverability
 
@@ -143,7 +145,7 @@ Deliverability of web push has not been great. I think your laptop has to be awa
 
 On my android device, I turned off background optimization for chrome. (Long press -> info -> battery -> top radio button). This *seems* to make things better. My test case is swipe-quit, wait a few minutes, send a push.
 
-- I'm not sure what happens if the device is restarted and the browser
-- But I'm not sure what happens on mobile if these are sent while offline for a long time
+- I'm not sure what happens if the device is restarted and the browser has not been started yet
+- Not sure what happens on mobile if these are sent while offline for a long time
 
 In general this isn't a reliable channel. See roadmap item on notifications.

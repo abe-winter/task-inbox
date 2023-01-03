@@ -1,8 +1,10 @@
 # task-inbox
 
-This is a 'shared task inbox' / 'approvals inbox' for small teams. It lets you post tasks via API and triggers webhooks when you resolve them. It previews attachments for the tasks.
+This is a 'shared task inbox' / 'approvals inbox' for solopreneurs and small teams. It lets you post tasks via API, and triggers webhooks when you resolve them. It previews attachments for the tasks.
 
 This *isn't* a project manager / jira clone sort of thing. It's for tasks that are triggered by a customer action, and then require fairly boring resolution by the product owner.
+
+This is early stage software. Security has not been audited, data may be lost.
 
 ## Working features
 
@@ -26,7 +28,7 @@ This *isn't* a project manager / jira clone sort of thing. It's for tasks that a
 - [run local dev server](./operations.md#dev-server)
 - [set up inbound webhook auth](./operations.md#inbound-auth)
 - [set up outbound webhook auth](./operations.md#outbound-auth)
-- [run on helm](./operations.md#run-helm)
+- [run on helm](./operations.md#set-up-helm-on-kube)
 - [database migrations](./operations.md#db-migrations)
 
 ## Roadmap
@@ -34,10 +36,12 @@ This *isn't* a project manager / jira clone sort of thing. It's for tasks that a
 ### immediate
 
 - render image URL in `__preview` fields
-- notifications: web push is not great. look into notification middlewares like apprise, like into alternate push hosts like gotify / UnifiedPush
+- CI / linters for react and python
+- notifications: add [apprise](https://github.com/caronc/apprise) notification middleware so we're not restricted to web push, add channel preference editor
 
 ### medium term
 
+- some way to add comments
 - process transparency
   - make some parts of tasks visible to end users (start with current status)
   - stats about resolution time, proportion of resolution statuses, and backlog
@@ -68,23 +72,22 @@ This *isn't* a project manager / jira clone sort of thing. It's for tasks that a
 
 ## Alternatives
 
-I built this because my projects have user-triggered customer service actions, and I was shelling into my prod server to do these. 'Task inbox' feels like a product that is easy to ruin with saas moats and plan levels, but is a natural fit for OSS because of the benefits of standardization.
+I built this because I was shelling into my prod server to handle manual tasks. I shopped around a little, and ran into:
 
-I shopped around a lot before building this. Without naming names:
+- some existing tools have either good manual features (user-facing task inbox, tasks moved forward by manual action), or good automatic features (API + webhook), but not both
+- there are good automatic workflow tools that don't make room for manual intervention
+- one was a good fit but had restrictive tos that seemed to preclude content moderation
+- chatops has good integrations but my team doesn't use chat
+- helpdesk / ticketing tools are perfect for this, but $10+ per seat, and may charge more than that for API integrations
+- moderation tools are expensive and too specific
 
-- Some tools are good at tasks with a single resolution action, but aren't designed for long-lived tasks with multiple updates over their lifetime
-- Many commercial tools make it difficult or require 'enterprise' to hook task updates to my API
-- Most tools don't allow custom content (but a few do this w/ js APIs, and at least one in the form of 'iframe plugins')
-- Chatops is generally good at this, but 1) hard to get a list of everything outstanding, and 2) requires you to give data + creds to the main chat provider, and 3) my team doesn't use chat
-- Helpdesk / ticketing tools are in theory perfect for this
-  - But are very expensive ($10+ per seat), and *much more* expensive if you want to do any customization
-  - The OSS ones seem to be on a 'paid app store' model and / or not support API inserts (todo: recheck this)
-  - As a user, I dislike being on the receving end of helpdesk threads + have unreasonable dislike for them as a tool
-- A shared-source workflow tool that looks amazing but is not designed to wait for user input after a task has started
-- An 'approval inbox' tool that looks great but only accepts form triggers, not API
-- A generally nice todo list tool but their TOS banned objectionable content. One of my use cases is disputes and content flags
-- Moderation tools are expensive, AI-heavy (= unclear privacy), not designed for one-person teams, and I'm not sure they support other kinds of service tasks
-- A shared team email tool that claimed to support API task creation but did not
+Comps on my list to try:
+
+- utask https://github.com/ovh/utask
+- nextcloud has notifications, tasks, and workflows
+- [zammad](https://zammad.org/screenshots) oss helpdesk
+- https://github.com/faxad/activflow
+- https://github.com/PowerJob/PowerJob
 
 ## Bugs
 

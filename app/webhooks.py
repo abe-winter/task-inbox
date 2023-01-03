@@ -13,10 +13,8 @@ def run_webhook(session: 'sqlalchemy.orm.Session', task: Task) -> Optional[reque
     if not version.default_hook_url:
         return None
     hook_auth = HookAuth.parse_obj(version.hook_auth)
-    # todo: filter active
-    # todo: select btwn multiple active keys, but preserve 501 behavior if 0 active
     key = session.query(WebhookKey) \
-        .filter_by(tschema=version.tschema, hook_auth=version.hook_auth) \
+        .filter_by(tschema=version.tschema, hook_auth=version.hook_auth, active=True) \
         .order_by(text('created desc')) \
         .first()
     if not key:
@@ -32,6 +30,8 @@ def run_webhook(session: 'sqlalchemy.orm.Session', task: Task) -> Optional[reque
     res.raise_for_status()
     # todo: anything we want to log or capture back about webhook? (maybe log which URL hit, which key, status code at least)
     return res
+
+# todo: move push functions to notifications module
 
 def send_push_key(claims: dict, pem_path: str, key: WebhookKey, body: str, outcomes: Optional[collections.Counter] = None, cleanup: list = None) -> Optional[Exception]:
     "do push to individual key, clean up key if necessary"

@@ -109,7 +109,7 @@ def post_task(host='http://localhost:5000', schema_name='ti:sample', task_name='
     res = requests.post(f'{host}/api/v1/tasks/', json=body.dict(), headers={'api-key': os.environ[key_var]})
     res.raise_for_status()
     body = res.json()
-    logger.info('ok %s %s', body['id'], body)
+    logger.info('ok %s %s', body['task']['id'], body)
 
 @COMMANDS
 def api_key(session: 'sqlalchemy.orm.Session', schema_name: str = None, name: str = None, keylen: int = 12):

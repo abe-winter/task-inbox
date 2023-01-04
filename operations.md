@@ -39,7 +39,7 @@ make bin/git-bug
 flask fab create-admin
 ```
 
-Once you have an admin user, you can use the flask-appbuilder web interface to make more users.
+Once you have an admin user, you can use the flask-appbuilder web interface to make more users. (FYI all users have to be admins for now because I don't know how to use FAB roles).
 
 ## Task schema
 
@@ -54,7 +54,7 @@ To install a schema:
 
 Schemas are versioned; old tasks are attached to the old version. There are pros + cons to this approach; we'll probably have to add task version migration at some point.
 
-The tool won't let you set a schema with a duplicate (name, semver). If you need to do this on your **local testing db**, you can delete the entire schema (all verisons, as well as all tasks; but some parts of your TaskHistory paper trail will be kept).
+The tool won't let you set a schema with a duplicate (name, semver). If you need to do this on your **local testing db**, you can delete the entire schema (all versions, as well as all tasks; but some parts of your TaskHistory paper trail will be kept).
 
 ```sh
 # this is destructive! but will enable you to run the taskschema command again
@@ -143,7 +143,7 @@ Task metadata is ... . It is set when ...
 
 Deliverability of web push has not been great. I think your laptop has to be awake with the browser running to get these (at least on linux; maybe it's better on macos).
 
-On my android device, I turned off background optimization for chrome. (Long press -> info -> battery -> top radio button). This *seems* to make things better. My test case is swipe-quit, wait a few minutes, send a push.
+On my android device, I [turned off background optimization](https://developer.android.com/topic/performance/background-optimization#bg-restrict) for chrome. (Long press -> info -> battery -> top radio button; do this for chrome even if you've installed the PWA, I think). This *seems* to make things better. My test case is swipe-quit, wait a few minutes, send a push.
 
 - I'm not sure what happens if the device is restarted and the browser has not been started yet
 - Not sure what happens on mobile if these are sent while offline for a long time

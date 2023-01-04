@@ -95,12 +95,15 @@ class TasksRest(BaseApi):
         body = PostTask.parse_obj(flask.request.json)
         session = appbuilder.get_session()
         query = SchemaVersion.join_latest(body.schema_name, select(TaskType).filter_by(name=body.task))
-        ttype, = session.execute(query).first() # todo: 404 on fail
+        ttype = session.execute(query).scalar()
+        if not ttype:
+            # todo: make sure BaseApi routes don't trigger app.errorhandler(404)
+            flask.abort(flask.Response(f'unk schema_name {body.schema_name} or unk task_type {body.task} in latest version', status=404))
         # todo: include ip addr and which key posted it
         task = Task.make(session, ttype, body.state, body.meta)
         session.commit()
-        send_webpush(session, self.appbuilder.app.config, task) # todo: move to background, retry
-        return task.jsonable()
+        send_webpush(session, self.appbuilder.app.config, task) # todo: move to background, retry semantics
+        return {'task': task.jsonable(), 'ttype': ttype.name}
 
 appbuilder.add_api(TasksRest)
 

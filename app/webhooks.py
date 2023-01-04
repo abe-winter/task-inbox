@@ -21,7 +21,7 @@ def run_webhook(session: 'sqlalchemy.orm.Session', task: Task) -> Optional[reque
         flask.abort(flask.Response("can't run webhook, missing webhook_key", status=501))
     url = urllib.parse.urlparse(version.default_hook_url).geturl()
     # todo: let vendors ask for custom bodies
-    body = {**task.jsonable(), 'ttype': task.ttype.name}
+    body = {'task': task.jsonable(), 'ttype': task.ttype.name}
     # todo: 502 and 503 here
     if hook_auth.kind == 'head':
         res = requests.post(url, json=body, headers={hook_auth.val: key.key})

@@ -64,7 +64,7 @@ def post_push_register():
     if existing:
         if existing.user_id != flask.g.user.id:
             # todo: siem log
-            flask.abort(Response("user ID for session seems to have changed", status=400))
+            flask.abort(flask.Response("user ID for session seems to have changed", status=400))
         existing.subscription_blob = flask.request.json['sub']
         existing.updated = datetime.now()
         # session.add(existing)

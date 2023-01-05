@@ -80,10 +80,35 @@ function HistoryCard({ update, i }) {
   </div>);
 }
 
+/** return true if looks like an image extension */
+function probably_image(rawUrl) {
+  try {
+    const url = new URL(rawUrl);
+    const tokens = url.pathname.split('.');
+    const ext = tokens[tokens.length - 1].toLowerCase();
+    return ['jpeg', 'jpg', 'gif', 'png', 'webp', 'avif'].indexOf(ext) != -1;
+  } catch (err) {
+    console.warn('ignoring err in probably_image', err);
+    return false;
+  }
+}
+
 function MetaRow({ field, val }) {
   const [keyName, keyType] = field.split('__');
-  return (<tr>
+  const firstRow = (<tr>
     <td>{keyName}</td>
     <td>{keyType == 'preview' ? <a href={val}>{val}</a> : val}</td>
   </tr>);
+  if (keyType == 'preview' && probably_image(val)) {
+    return (<>
+      {firstRow}
+      <tr>
+        <td colSpan="2">
+          <img src={val} className="img-fluid" />
+        </td>
+      </tr>
+    </>);
+  } else {
+    return firstRow;
+  }
 }

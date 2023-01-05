@@ -13,6 +13,7 @@ This is early stage software. Security has not been audited, data may be lost.
 - manage task schemas via yaml
 - web UX, mobile-friendly, installable PWA
 - web push on desktop + android for new tasks (but see [reliability notes](./operations.md#web-push-deliverability))
+- render image URLs in `__preview` fields
 
 ## Screenshots
 
@@ -35,13 +36,13 @@ This is early stage software. Security has not been audited, data may be lost.
 
 ### immediate
 
-- render image URL in `__preview` fields
 - CI / linters for react and python
 - notifications: add [apprise](https://github.com/caronc/apprise) notification middleware so we're not restricted to web push, add channel preference editor
 
 ### medium term
 
 - some way to add comments
+- `__merge` fields. collapse all matching tasks to a single admin-facing task -- for moderation flows, for example, we may only care about the latest version of a document
 - process transparency
   - make some parts of tasks visible to end users (start with current status)
   - stats about resolution time, proportion of resolution statuses, and backlog

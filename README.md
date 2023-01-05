@@ -29,6 +29,7 @@ This is early stage software. Security has not been audited, data may be lost.
 - [run local dev server](./operations.md#dev-server)
 - [set up inbound webhook auth](./operations.md#inbound-auth)
 - [set up outbound webhook auth](./operations.md#outbound-auth)
+- [connect your application](./operations.md#add-an-application-server)
 - [run on helm](./operations.md#set-up-helm-on-kube)
 - [database migrations](./operations.md#db-migrations)
 

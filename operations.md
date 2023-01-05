@@ -61,7 +61,7 @@ The tool won't let you set a schema with a duplicate (name, semver). If you need
 ./cli.py rmschema ti:sample
 ```
 
-If you're running remotely, you have to get the file to your server somehow and then. (**todo**: do this with the FAB admin panel + file uploads).
+Or in the admin, go to schemas -> add.
 
 Also [cli.py](./cli.py) has a bunch of other commands for dealing with tasks. `./cli.py -h` and `./cli.py <command> -h` will show you inline help.
 
@@ -75,10 +75,17 @@ make run
 
 ## Inbound auth
 
-(todo expand)
+This is for *inbound* requests from your app server to task-inbox.
 
-1. create a key with `./cli.py ...`
-1. this is controlled by the []() decorator. If you misconfigure, this will 501 / 401 / 403 depending on what is wrong
+```sh
+./cli.py api_key --name "descriptive name"
+# details will be printed on the shell
+```
+
+This should be in the `api-key` head in requests, and is controlled by the `apikey_auth` decorator in [auth.py](./app/auth.py). If you mess up, it will 401 / 403 depending on what's wrong -- the common setup failures are:
+- missing api-key header on request (401)
+- no api keys on server at all (403, todo make this a 501)
+- your api key isn't known (403)
 
 ## Outbound auth
 
@@ -91,6 +98,7 @@ make run
 1. Generate a WebhookKey with `./cli.py webhook_key $SCHEMA_NAME`
     - schema name is `ti:sample` in our test setup, for example
     - This will generate a secret and print it in the terminal, but you can also specify an external secret with `--key`
+1. **careful**: webhook keys survive schema updates *only if* the `hook_auth` section stays the same. if you change hook_auth, you need to generate new webhook keys
 
 ## DB migrations
 
@@ -101,6 +109,16 @@ alembic revision --autogenerate -m "short description"
 # run migrations
 alembic upgrade head
 ```
+
+## Add an application server
+
+This section describes how to integrate your app server with a running tibox.
+
+1. Make a tibox.yml file (name doesn't matter), using sample.yml in this repo as a template
+1. Upload it using the 'plus' button in the admin 'Schemas' list
+1. shell into your running tibox (todo make this available in admin)
+1. create an api key using [inbound auth](#inbound-auth) instructions here
+1. if your default_hook_url is set, you must also [make a webhook key](#outbound-auth) or state changes will crash mysteriously
 
 ## Set up helm on kube
 

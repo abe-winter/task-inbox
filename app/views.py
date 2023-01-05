@@ -9,6 +9,7 @@ from .models import Task, TaskType, SchemaVersion, TaskSchema, TaskHistory
 from .auth import apikey_auth
 from .messagetypes import PostTask
 from .webhooks import run_webhook, send_webpush
+from .util import UserFacingError
 
 # todo: get_session may be causing lock issues -- make sure I'm not supposed to be decorating
 
@@ -123,4 +124,17 @@ def page_not_found(e):
             "404.html", base_template=appbuilder.base_template, appbuilder=appbuilder
         ),
         404,
+    )
+
+@appbuilder.app.errorhandler(UserFacingError)
+def misc_error_render(err: UserFacingError):
+    "body for misc error"
+    err.args[0]
+    return (
+        render_template(
+            "misc-error.htm", base_template=appbuilder.base_template, appbuilder=appbuilder,
+            title=f'Error {err.response_code}',
+            message=err.args[0],
+        ),
+        err.response_code,
     )

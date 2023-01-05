@@ -16,3 +16,8 @@ def table(rows: 'Sequence[Sequence]', printme=True, space=2) -> 'Sequence[Sequen
         for row in padded:
             print(spacer.join(row))
     return padded
+
+class UserFacingError(Exception):
+    def __init__(self, *args, response_code=500, **kwargs):
+        self.response_code = response_code
+        super().__init__(*args, **kwargs)

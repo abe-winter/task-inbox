@@ -1,7 +1,7 @@
 import yaml, logging
 from flask_appbuilder.forms import DynamicForm, FileUploadField, FieldConverter
 from flask import flash
-from flask_appbuilder import SimpleFormView
+from flask_appbuilder import SimpleFormView, has_access
 from flask_babel import lazy_gettext as _
 import flask
 from flask import render_template
@@ -16,16 +16,33 @@ from .messagetypes import PostTask
 from .webhooks import run_webhook
 from wtforms import Form, StringField
 from backend.taskschema import TaskSchemaSchema
+from .util import UserFacingError
 
 logger = logging.getLogger(__name__)
+
+class NewSchemaVersion(DynamicForm):
+    yaml_body = FileUploadField('yaml schema spec')
 
 class SchemaVersionView(ModelView):
     datamodel = SQLAInterface(SchemaVersion)
     search_exclude_columns = ['hook_auth']
     list_columns = ['tschema', 'version', 'semver', 'default_hook_url', 'hook_auth']
     label_columns = {'tschema': 'schema name'}
-    add_columns = ['tschema']
-    # todo: add action should link to NewSchemaView
+    add_columns = ['yaml_body']
+    add_form = NewSchemaVersion
+
+    @expose("/add", methods=["GET", "POST"])
+    @has_access
+    def add(self):
+        if flask.request.method != 'POST':
+            return super().add()
+        else:
+            session = appbuilder.get_session
+            # todo: I think refresh() writes to /static/uploads. this may work without it, test
+            form = self.add_form.refresh()
+            insert_schema(session, form.yaml_body.data.stream, web_mode=True)
+            session.commit()
+            return self.post_add_redirect()
 
 appbuilder.add_view(SchemaVersionView, 'Schemas')
 
@@ -35,6 +52,8 @@ def insert_schema(session: 'sqlalchemy.orm.Session', fileobj: 'io.IOWrapper', we
     schema = TaskSchemaSchema.parse_obj(yaml.safe_load(fileobj))
     logger.info('parsed schema %s version %s with %d tasks', schema.name, schema.semver, len(schema.tasktypes))
     existing = session.execute(SchemaVersion.latest(schema.name)).first()
+    # todo: edge case to exercise + fix in test suite: IntegrityError UniqueViolation "task_schema_name_key"
+    # this happens when you delete all versions via UX, but the TaskSchema still exists
     new_ver = SchemaVersion(
         version=0,
         semver=schema.semver,
@@ -52,7 +71,7 @@ def insert_schema(session: 'sqlalchemy.orm.Session', fileobj: 'io.IOWrapper', we
         logger.info('%s has old version %d', schema.name, old_ver.version)
         if old_ver.semver == new_ver.semver:
             if web_mode:
-                print('todo: uesr-facing error instead of 500')
+                raise UserFacingError(f"semver {old_ver.semver} would collide", response_code=409)
             raise KeyError(old_ver.semver, 'semver would collide')
         new_ver.tschema_id = old_ver.tschema_id
         new_ver.version = old_ver.version + 1
@@ -65,18 +84,3 @@ def insert_schema(session: 'sqlalchemy.orm.Session', fileobj: 'io.IOWrapper', we
             resolved_states=ttype.resolved_states,
         ))
     logger.info('inserted %d tasktypes', len(schema.tasktypes))
-
-class NewSchemaVersion(DynamicForm):
-    yaml_body = FileUploadField('yaml schema spec')
-
-class NewSchemaView(SimpleFormView):
-    form = NewSchemaVersion
-    form_title = 'Upload new schema'
-    message = 'Uploaded'
-
-    def form_post(self, form):
-        session = appbuilder.get_session
-        insert_schema(session, form.yaml_body.data.stream)
-        session.commit()
-
-appbuilder.add_view(NewSchemaView, "New schema")

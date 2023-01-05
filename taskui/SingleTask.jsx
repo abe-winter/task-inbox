@@ -5,6 +5,7 @@ import { useStore } from './store';
 import { fetcher } from './components.jsx';
 
 async function setTaskState(taskId, state) {
+  // todo: rename to setRemoteTaskState for clarity
   const res = await fetch(`/api/v1/tasks/${taskId}/state?` + new URLSearchParams({ state }), { method: 'PATCH' });
   if (res.status != 200) throw Error(`${res.status} ${await res.text()}`);
   return await res.json();
@@ -14,6 +15,7 @@ function StateBtn({ taskId, label, resolved, historyUrl }) {
   const setLocalTaskState = useStore(state => state.setTaskState);
   const taskUrl = useStore(state => state.taskUrl);
   const { mutate } = useSWRConfig();
+  // todo: this sometimes gets called twice -- weird react hook thing?
   async function setState() {
     const { task } = await setTaskState(taskId, label);
     setLocalTaskState(taskId, label, task.resolved);

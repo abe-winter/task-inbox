@@ -25,9 +25,7 @@ class SchemaVersionView(ModelView):
     list_columns = ['tschema', 'version', 'semver', 'default_hook_url', 'hook_auth']
     label_columns = {'tschema': 'schema name'}
     add_columns = ['tschema']
-    # list_columns = ['ttype', 'state', 'user_id', 'resolved', 'created']
-    # edit_exclude_columns = ['created', 'ttype']
-    # add_exclude_columns = ['created']
+    # todo: add action should link to NewSchemaView
 
 appbuilder.add_view(SchemaVersionView, 'Schemas')
 

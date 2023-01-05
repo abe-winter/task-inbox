@@ -36,7 +36,7 @@ This is early stage software. Security has not been audited, data may be lost.
 
 ### immediate
 
-- CI / linters for react and python
+- CI lint react and python
 - notifications: add [apprise](https://github.com/caronc/apprise) notification middleware so we're not restricted to web push, add channel preference editor
 
 ### medium term
@@ -52,6 +52,9 @@ This is early stage software. Security has not been audited, data may be lost.
   - ETA hooks:
     - tell the system about features so it can generate explainable estimates ('tasks of this type normally take 1 hour, but it's the weekend and you have more than 2 items so expect 1-2 days')
     - register SLOs
+- auth keys:
+  - merge inbound api keys + outbound webhook keys to 'duplex api key', a configurable thing that can optionally do both
+  - config schema for storing these in secret vars in addition to db (to save manual action when booting a new environment)
 - assignments
   - assign tasks to admins, plug in to on-call rotas
   - system for urgency levels (programmable based on various factors: SLA, deadline, user flag, customer type, ML)
